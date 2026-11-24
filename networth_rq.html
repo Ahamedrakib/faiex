@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NetWorth RQ — Personal Financial Operating System</title>
+
+  <!-- Fonts: Inter + Hind Siliguri for English/Bangla clarity -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Base Typography & Smooth Scrolling */
+    body {
+      font-family: 'Inter', 'Hind Siliguri', sans-serif;
+      transition: background-color 0.35s ease, color 0.35s ease;
+      overflow-x: hidden;
+    }
+
+    /* Theme 1: Pure White Minimal (Apple / Notion inspired) */
+    body[data-theme="pure_white"] {
+      --bg-app: #f8fafc;
+      --bg-gradient: radial-gradient(circle at top right, #ffffff 0%, #f1f5f9 100%);
+      --glass-bg: rgba(255, 255, 255, 0.85);
+      --glass-border: rgba(226, 232, 240, 0.9);
+      --glass-shadow: 0 8px 30px rgba(15, 23, 42, 0.04);
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --accent: #0f172a;
+      --accent-soft: #f1f5f9;
+      --accent-text: #ffffff;
+      --input-bg: #ffffff;
+    }
+
+    /* Theme 2: White + Soft Yellow + Neon Orange */
+    body[data-theme="warm_neon"] {
+      --bg-app: #fffdf5;
+      --bg-gradient: radial-gradient(circle at top left, #fef9c3 0%, #fffbeb 45%, #ffffff 100%);
+      --glass-bg: rgba(255, 255, 255, 0.82);
+      --glass-border: rgba(253, 224, 71, 0.55);
+      --glass-shadow: 0 10px 30px rgba(249, 115, 22, 0.08);
+      --text-primary: #1c1917;
+      --text-secondary: #78716c;
+      --accent: #ff5500;
+      --accent-soft: #ffedd5;
+      --accent-text: #ffffff;
+      --input-bg: #ffffff;
+    }
+
+    /* Theme 3: Premium Dark Glass */
+    body[data-theme="dark_glass"] {
+      --bg-app: #090d16;
+      --bg-gradient: radial-gradient(circle at top right, #1e293b 0%, #090d16 60%, #020617 100%);
+      --glass-bg: rgba(15, 23, 42, 0.72);
+      --glass-border: rgba(148, 163, 184, 0.16);
+      --glass-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.15);
+      --accent-text: #0f172a;
+      --input-bg: rgba(30, 41, 59, 0.85);
+    }
+
+    body {
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--text-primary);
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+    }
+
+    .glass-input {
+      background: var(--input-bg);
+      border: 1px solid var(--glass-border);
+      color: var(--text-primary);
+    }
+    .glass-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: var(--accent-text);
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .btn-accent:hover { opacity: 0.92; }
+    .btn-accent:active { transform: scale(0.97); }
+
+    .text-muted { color: var(--text-secondary); }
+
+    .nav-item.active {
+      background: var(--accent);
+      color: var(--accent-text);
+      font-weight: 600;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); border-radius: 9999px; }
+
+    /* Print Styles for PDF Export */
+    @media print {
+      aside, nav, #mobile-bottom-nav, .no-print { display: none !important; }
+      main { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+      .glass-card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body data-theme="pure_white" class="min-h-screen flex flex-col lg:flex-row">
+
+  <!-- PIN Lock Overlay -->
+  <div id="pin-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4">
+    <div class="glass-card rounded-3xl p-8 w-full max-w-sm text-center space-y-5">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-900 text-white flex items-center justify-center">
+        <i data-lucide="lock" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h2 class="text-xl font-bold">NetWorth RQ Locked</h2>
+        <p class="text-sm text-muted mt-1">Enter your 4-digit PIN to unlock your vault</p>
+      </div>
+      <input id="pin-unlock-input" type="password" maxlength="6" placeholder="••••" class="glass-input w-full text-center text-2xl tracking-[0.5em] py-3 rounded-2xl font-bold" />
+      <p id="pin-error-msg" class="text-xs text-rose-500 hidden">Incorrect PIN. Try again.</p>
+      <button onclick="unlockWithPin()" class="btn-accent w-full py-3 rounded-2xl font-semibold">Unlock Vault</button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- Reusable Custom Modal -->
+  <div id="app-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4">
+    <div class="glass-card rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-200/30 pb-3">
+        <h3 id="modal-title" class="text-lg font-bold">Modal</h3>
+        <button onclick="closeModal()" class="p-2 rounded-xl hover:bg-slate-500/10">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="modal-body" class="space-y-4"></div>
+    </div>
+  </div>
+
+  <!-- Desktop Sidebar Navigation -->
+  <aside class="hidden lg:flex flex-col w-64 shrink-0 glass-card border-r min-h-screen sticky top-0 h-screen p-4 justify-between no-print">
+    <div class="space-y-6 overflow-y-auto pr-1">
+      <!-- Brand -->
+      <div class="flex items-center justify-between px-2 pt-1">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl btn-accent flex items-center justify-center font-extrabold text-sm shadow">RQ</div>
+          <div>
+            <h1 class="font-extrabold text-base tracking-tight leading-none">NetWorth RQ</h1>
+            <p class="text-[11px] text-muted mt-0.5">Wealth OS</p>
+          </div>
+        </div>
+        <span id="sync-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 font-semibold">Synced</span>
+      </div>
+
+      <!-- Primary Nav -->
+      <nav class="space-y-1 text-sm" id="desktop-nav">
+        <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</button>
+        <button onclick="switchTab('accounts')" data-tab="accounts" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="wallet" class="w-4 h-4"></i> Accounts & Reconcile</button>
+        <button onclick="switchTab('trading')" data-tab="trading" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="candlestick-chart" class="w-4 h-4"></i> Trading Workspace</button>
+        <button onclick="switchTab('income')" data-tab="income" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="arrow-down-left" class="w-4 h-4"></i> Income & Pending</button>
+        <button onclick="switchTab('expenses')" data-tab="expenses" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="arrow-up-right" class="w-4 h-4"></i> Expenses & Limit</button>
+        <button onclick="switchTab('transfers')" data-tab="transfers" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="arrow-left-right" class="w-4 h-4"></i> Transfers & P2P</button>
+        <button onclick="switchTab('assets')" data-tab="assets" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="gem" class="w-4 h-4"></i> Assets & Investments</button>
+        <button onclick="switchTab('loans')" data-tab="loans" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="handshake" class="w-4 h-4"></i> Loans, Goals & Bills</button>
+        <button onclick="switchTab('analytics')" data-tab="analytics" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="pie-chart" class="w-4 h-4"></i> Analytics & Export</button>
+        <button onclick="switchTab('checkin')" data-tab="checkin" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="clipboard-check" class="w-4 h-4"></i> Daily Check-in</button>
+        <button onclick="switchTab('ai')" data-tab="ai" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="sparkles" class="w-4 h-4"></i> AI Financial Agent</button>
+        <button onclick="switchTab('settings')" data-tab="settings" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition"><i data-lucide="settings" class="w-4 h-4"></i> Settings & Backup</button>
+      </nav>
+    </div>
+
+    <!-- Bottom Quick Controls -->
+    <div class="pt-3 border-t border-slate-200/30 flex items-center justify-between gap-2">
+      <button onclick="toggleHideBalance()" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl glass-input text-xs font-medium hover:opacity-80" title="Hide/Show Balances">
+        <i data-lucide="eye-off" class="w-3.5 h-3.5"></i> <span id="hide-btn-label">Hide</span>
+      </button>
+      <button onclick="cycleTheme()" class="flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl glass-input text-xs font-medium hover:opacity-80" title="Switch Theme">
+        <i data-lucide="palette" class="w-3.5 h-3.5"></i> Theme
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col min-w-0 pb-24 lg:pb-8">
+    <!-- Top Header Bar -->
+    <header class="sticky top-0 z-30 glass-card border-b px-4 lg:px-8 py-3 flex items-center justify-between gap-3 no-print">
+      <div class="flex items-center gap-2.5">
+        <div class="lg:hidden w-8 h-8 rounded-xl btn-accent flex items-center justify-center font-extrabold text-xs">RQ</div>
+        <div>
+          <h2 id="page-title" class="font-bold text-base lg:text-lg leading-tight">Dashboard</h2>
+          <p class="text-[11px] text-muted hidden sm:block">Know Every Taka. Track Every Dollar.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Live Exchange Rate Pill -->
+        <button onclick="openRateModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-input text-xs font-semibold hover:opacity-85" title="Edit USD to BDT Exchange Rate">
+          <span class="text-emerald-500 font-bold">$1</span>
+          <span>=</span>
+          <span id="header-rate-display">৳126.50</span>
+          <i data-lucide="edit-2" class="w-3 h-3 text-muted"></i>
+        </button>
+
+        <button onclick="toggleHideBalance()" class="lg:hidden p-2 rounded-xl glass-input" title="Hide Balance">
+          <i data-lucide="eye-off" class="w-4 h-4"></i>
+        </button>
+        <button onclick="cycleTheme()" class="lg:hidden p-2 rounded-xl glass-input" title="Switch Theme">
+          <i data-lucide="palette" class="w-4 h-4"></i>
+        </button>
+        <button onclick="lockAppNow()" id="header-lock-btn" class="hidden p-2 rounded-xl glass-input" title="Lock Vault">
+          <i data-lucide="lock" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dynamic Tab Container -->
+    <main id="main-content" class="p-4 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+      <!-- Rendered dynamically by JS -->
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav id="mobile-bottom-nav" class="lg:hidden fixed bottom-0 inset-x-0 z-30 glass-card border-t px-2 py-2 flex items-center justify-around text-[11px] no-print">
+    <button onclick="switchTab('dashboard')" data-mob-tab="dashboard" class="flex flex-col items-center gap-1 px-2 py-1 rounded-xl"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Home</span></button>
+    <button onclick="switchTab('accounts')" data-mob-tab="accounts" class="flex flex-col items-center gap-1 px-2 py-1 rounded-xl"><i data-lucide="wallet" class="w-5 h-5"></i><span>Accounts</span></button>
+    <button onclick="switchTab('trading')" data-mob-tab="trading" class="flex flex-col items-center gap-1 px-2 py-1 rounded-xl"><i data-lucide="candlestick-chart" class="w-5 h-5"></i><span>Trading</span></button>
+    <button onclick="switchTab('ai')" data-mob-tab="ai" class="flex flex-col items-center gap-1 px-2 py-1 rounded-xl"><i data-lucide="sparkles" class="w-5 h-5"></i><span>AI Agent</span></button>
+    <button onclick="openMobileMoreMenu()" class="flex flex-col items-center gap-1 px-2 py-1 rounded-xl"><i data-lucide="menu" class="w-5 h-5"></i><span>More</span></button>
+  </nav>
+
+  <!-- Firebase + Core Application Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // =========================================================================
+    // 1. DEFAULT ZERO-BALANCE STATE (No Fake/Demo Data)
+    // =========================================================================
+    function createInitialState() {
+      return {
+        settings: {
+          usdToBdtRate: 126.50,
+          monthlyExpenseLimitBdt: 0,
+          tradingMode: false,
+          theme: 'pure_white',
+          hideBalance: false,
+          pin: '',
+          aiLanguage: 'banglish',
+          customGeminiKey: ''
+        },
+        accounts: [
+          // BDT Solid Cash Accounts (All start at 0)
+          { id: 'acc_bank', name: 'Bank Account', type: 'SOLID_CASH', currency: 'BDT', openingBalance: 0, balance: 0, icon: 'landmark' },
+          { id: 'acc_bkash', name: 'bKash', type: 'SOLID_CASH', currency: 'BDT', openingBalance: 0, balance: 0, icon: 'smartphone' },
+          { id: 'acc_nagad', name: 'Nagad', type: 'SOLID_CASH', currency: 'BDT', openingBalance: 0, balance: 0, icon: 'smartphone' },
+          { id: 'acc_rocket', name: 'Rocket', type: 'SOLID_CASH', currency: 'BDT', openingBalance: 0, balance: 0, icon: 'rocket' },
+          { id: 'acc_moneybag', name: 'Money Bag / Wallet', type: 'SOLID_CASH', currency: 'BDT', openingBalance: 0, balance: 0, icon: 'briefcase' },
+          { id: 'acc_cash', name: 'Physical Cash (Nogod)', type: 'SOLID_CASH', currency: 'BDT', openingBalance: 0, balance: 0, icon: 'banknote' },
+          // USD / USDT Trading Accounts (All start at 0)
+          { id: 'acc_binance', name: 'Binance', type: 'TRADING', currency: 'USDT', openingBalance: 0, balance: 0, icon: 'coins' },
+          { id: 'acc_bybit', name: 'Bybit', type: 'TRADING', currency: 'USDT', openingBalance: 0, balance: 0, icon: 'coins' },
+          { id: 'acc_okx', name: 'OKX', type: 'TRADING', currency: 'USDT', openingBalance: 0, balance: 0, icon: 'coins' },
+          { id: 'acc_bitget', name: 'Bitget', type: 'TRADING', currency: 'USDT', openingBalance: 0, balance: 0, icon: 'coins' },
+          { id: 'acc_metamask', name: 'MetaMask', type: 'TRADING', currency: 'USDT', openingBalance: 0, balance: 0, icon: 'shield' },
+          { id: 'acc_web3', name: 'Web3 Wallet', type: 'TRADING', currency: 'USDT', openingBalance: 0, balance: 0, icon: 'globe' }
+        ],
+        trading: {
+          openingCapitalUsdt: 0,
+          additionalDepositsUsdt: 0,
+          withdrawalsUsdt: 0,
+          snapshots: [], // { id, date, capitalUsdt, changeUsdt, notes }
+          trades: []     // { id, exchange, pair, side, entryPrice, exitPrice, qty, fee, sl, tp, status, notes, date }
+        },
+        livePrices: {
+          BTC: { price: 0, manual: false, updated: null },
+          ETH: { price: 0, manual: false, updated: null },
+          BNB: { price: 0, manual: false, updated: null },
+          SOL: { price: 0, manual: false, updated: null },
+          USDT: { price: 1.00, manual: false, updated: null }
+        },
+        incomeCategories: [
+          'Freelancing / Client', 'Salary / Job', 'Business / Dokan', 'Trading',
+          'Trading Profit Withdrawal', 'Airdrop', 'Booster', 'Event', 'VISA',
+          'Tuition / Part-time', 'Family / Gift', 'Others'
+        ],
+        expenseCategories: [
+          'Food & Dining', 'Transport', 'Bills & Recharge', 'Shopping',
+          'Family / Health', 'Entertainment / Others', 'Bike - Fuel',
+          'Bike - Servicing', 'Internet - Phone', 'Internet - WiFi',
+          'Ahad Ali Store', 'Hatkoroj'
+        ],
+        pendingIncomes: [], // { id, title, category, amount, currency, expectedDate, status, notes }
+        hardAssets: [],     // { id, name, category, purchasePrice, resaleValue, status, soldPrice, soldDate, notes }
+        investments: [],    // { id, name, type, invested, currentValue, currency, status }
+        loans: [],          // { id, type: 'RECEIVABLE'|'LIABILITY', person, principal, remaining, currency, dueDate, status, notes }
+        goals: [],          // { id, name, target, saved, currency, targetDate }
+        recurringBills: [
+          { id: 'bill_wifi', name: 'WiFi Bill', amount: 0, frequency: 'Monthly', dueDay: 5, lastPaid: null },
+          { id: 'bill_phone', name: 'Phone Internet Package', amount: 0, frequency: 'Monthly', dueDay: 10, lastPaid: null }
+        ],
+        reconciliations: [], // { id, accountId, systemBalance, actualBalance, difference, status, date, notes }
+        dailyCheckins: [],   // { id, date, totalNetWorthBdt, solidCashBdt, tradingUsdt, notes }
+        ledger: [],          // Immutable central ledger
+        aiChat: []           // { role: 'user'|'assistant', text: string, time: string }
+      };
+    }
+
+    let state = createInitialState();
+    let currentTab = 'dashboard';
+    let chartInstances = {};
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'networth-rq-app';
+
+    // =========================================================================
+    // 2. FIREBASE CLOUD PERSISTENCE (Strict Auth & Path Rules)
+    // =========================================================================
+    async function initCloudPersistence() {
+      const badge = document.getElementById('sync-badge');
+      try {
+        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+          badge.textContent = 'Session Mode';
+          badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-semibold';
+          return;
+        }
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          const cred = await signInWithCustomToken(auth, __initial_auth_token);
+          currentUser = cred.user;
+        } else {
+          const cred = await signInAnonymously(auth);
+          currentUser = cred.user;
+        }
+
+        if (!currentUser) return;
+        const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'networth_data', 'state');
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const loaded = JSON.parse(snap.data().payload);
+          state = { ...createInitialState(), ...loaded };
+          applyTheme(state.settings.theme, false);
+          if (state.settings.pin) {
+            document.getElementById('header-lock-btn').classList.remove('hidden');
+          }
+        }
+        badge.textContent = 'Cloud Synced';
+        renderApp();
+      } catch (err) {
+        console.error('Cloud sync init error:', err);
+        badge.textContent = 'Offline Mode';
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-500 font-semibold';
+      }
+    }
+
+    async function persistState() {
+      if (!db || !currentUser) return;
+      const badge = document.getElementById('sync-badge');
+      try {
+        badge.textContent = 'Saving...';
+        const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'networth_data', 'state');
+        await setDoc(docRef, {
+          payload: JSON.stringify(state),
+          updatedAt: new Date().toISOString()
+        });
+        badge.textContent = 'Cloud Synced';
+      } catch (err) {
+        console.error('Save error:', err);
+        badge.textContent = 'Sync Error';
+      }
+    }
+
+    // =========================================================================
+    // 3. FINANCIAL CALCULATION ENGINES (Strict Accounting Integrity)
+    // =========================================================================
+    const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+    const round6 = (n) => Math.round((Number(n) + Number.EPSILON) * 1000000) / 1000000;
+
+    function computeMetrics() {
+      const rate = Number(state.settings.usdToBdtRate) || 126.50;
+
+      // A. Solid Cash (BDT accessible accounts only)
+      const solidCashAccounts = state.accounts.filter(a => a.type === 'SOLID_CASH');
+      const solidCashBdt = round2(solidCashAccounts.reduce((s, a) => s + Number(a.balance), 0));
+
+      // B. Trading Capital (USD/USDT accounts only)
+      const tradingAccounts = state.accounts.filter(a => a.type === 'TRADING');
+      const currentTradingUsdt = round2(tradingAccounts.reduce((s, a) => s + Number(a.balance), 0));
+      const tradingCapitalBdt = round2(currentTradingUsdt * rate);
+
+      // Cash-Flow-Adjusted Trading PnL
+      const openingCap = Number(state.trading.openingCapitalUsdt) || 0;
+      const deposits = Number(state.trading.additionalDepositsUsdt) || 0;
+      const withdrawals = Number(state.trading.withdrawalsUsdt) || 0;
+      const netExternalCashFlow = round2(deposits - withdrawals);
+      const tradingPnlUsdt = round2(currentTradingUsdt - openingCap - netExternalCashFlow);
+      const tradingPnlPct = openingCap > 0 ? round2((tradingPnlUsdt / openingCap) * 100) : 0;
+      const tradingPnlBdt = round2(tradingPnlUsdt * rate);
+
+      // C. Hard Assets (Owned only — sold assets excluded)
+      const ownedHardAssetsBdt = round2(
+        state.hardAssets.filter(a => a.status === 'OWNED').reduce((s, a) => s + Number(a.resaleValue), 0)
+      );
+
+      // Investments (Active only)
+      const activeInvestmentsBdt = round2(
+        state.investments.filter(i => i.status === 'ACTIVE').reduce((s, i) => {
+          const val = Number(i.currentValue);
+          return s + (i.currency === 'BDT' ? val : val * rate);
+        }, 0)
+      );
+
+      // Loans: Receivables & Liabilities
+      const receivablesBdt = round2(
+        state.loans.filter(l => l.type === 'RECEIVABLE' && l.status !== 'SETTLED').reduce((s, l) => {
+          const rem = Number(l.remaining);
+          return s + (l.currency === 'BDT' ? rem : rem * rate);
+        }, 0)
+      );
+      const liabilitiesBdt = round2(
+        state.loans.filter(l => l.type === 'LIABILITY' && l.status !== 'SETTLED').reduce((s, l) => {
+          const rem = Number(l.remaining);
+          return s + (l.currency === 'BDT' ? rem : rem * rate);
+        }, 0)
+      );
+
+      // D. Total Net Worth (No double counting, excludes pending income)
+      const totalNetWorthBdt = round2(
+        solidCashBdt + tradingCapitalBdt + ownedHardAssetsBdt + activeInvestmentsBdt + receivablesBdt - liabilitiesBdt
+      );
+      const totalNetWorthUsd = rate > 0 ? round2(totalNetWorthBdt / rate) : 0;
+
+      // Current Month Income & Expense
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const monthlyIncomeBdt = round2(
+        state.ledger.filter(l => l.type === 'INCOME' && l.date.startsWith(ym))
+          .reduce((s, l) => s + (l.currency === 'BDT' ? Number(l.netAmount) : Number(l.netAmount) * rate), 0)
+      );
+      const monthlyExpenseBdt = round2(
+        state.ledger.filter(l => l.type === 'EXPENSE' && l.date.startsWith(ym))
+          .reduce((s, l) => s + (l.currency === 'BDT' ? Number(l.originalAmount) + Number(l.fee) : (Number(l.originalAmount) + Number(l.fee)) * rate), 0)
+      );
+
+      return {
+        rate, solidCashBdt, currentTradingUsdt, tradingCapitalBdt,
+        openingCap, deposits, withdrawals, netExternalCashFlow,
+        tradingPnlUsdt, tradingPnlPct, tradingPnlBdt,
+        ownedHardAssetsBdt, activeInvestmentsBdt, receivablesBdt, liabilitiesBdt,
+        totalNetWorthBdt, totalNetWorthUsd, monthlyIncomeBdt, monthlyExpenseBdt
+      };
+    }
+
+    // Formatters with Hide Balance Support
+    function fmtBDT(val) {
+      if (state.settings.hideBalance) return '৳••••••';
+      const n = Number(val) || 0;
+      const sign = n < 0 ? '-' : '';
+      return `${sign}৳${Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function fmtUSD(val, suffix = 'USDT') {
+      if (state.settings.hideBalance) return '$••••••';
+      const n = Number(val) || 0;
+      const sign = n < 0 ? '-' : '';
+      return `${sign}$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${suffix ? ' ' + suffix : ''}`;
+    }
+
+    function fmtCurrency(val, currency) {
+      return currency === 'BDT' ? fmtBDT(val) : fmtUSD(val, currency);
+    }
+
+    // =========================================================================
+    // 4. UI UTILITIES (Toast, Modal, Theme, Privacy)
+    // =========================================================================
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      const colors = type === 'error' ? 'bg-rose-600 text-white' : type === 'warning' ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white';
+      el.className = `${colors} px-4 py-3 rounded-2xl shadow-lg text-sm font-medium flex items-center gap-2 pointer-events-auto`;
+      el.innerHTML = `<span>${message}</span>`;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    window.openModal = (title, html) => {
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-body').innerHTML = html;
+      const m = document.getElementById('app-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+      lucide.createIcons();
+    };
+
+    window.closeModal = () => {
+      const m = document.getElementById('app-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    };
+
+    function applyTheme(themeName, save = true) {
+      state.settings.theme = themeName;
+      document.body.setAttribute('data-theme', themeName);
+      if (save) persistState();
+    }
+
+    window.cycleTheme = () => {
+      const order = ['pure_white', 'warm_neon', 'dark_glass'];
+      const next = order[(order.indexOf(state.settings.theme) + 1) % order.length];
+      applyTheme(next);
+      showToast(`Theme: ${next.replace('_', ' ').toUpperCase()}`);
+    };
+
+    window.toggleHideBalance = () => {
+      state.settings.hideBalance = !state.settings.hideBalance;
+      const lbl = document.getElementById('hide-btn-label');
+      if (lbl) lbl.textContent = state.settings.hideBalance ? 'Show' : 'Hide';
+      persistState();
+      renderApp();
+    };
+
+    window.lockAppNow = () => {
+      if (!state.settings.pin) return showToast('Set a PIN in Settings first', 'warning');
+      const ov = document.getElementById('pin-overlay');
+      ov.classList.remove('hidden');
+      ov.classList.add('flex');
+      document.getElementById('pin-unlock-input').value = '';
+    };
+
+    window.unlockWithPin = () => {
+      const val = document.getElementById('pin-unlock-input').value;
+      if (val === state.settings.pin) {
+        const ov = document.getElementById('pin-overlay');
+        ov.classList.add('hidden');
+        ov.classList.remove('flex');
+        document.getElementById('pin-error-msg').classList.add('hidden');
+      } else {
+        document.getElementById('pin-error-msg').classList.remove('hidden');
+      }
+    };
+
+    window.openRateModal = () => {
+      openModal('Update USD/USDT to BDT Rate', `
+        <p class="text-xs text-muted">Changing the dashboard rate converts display totals without altering historical transaction records.</p>
+        <div>
+          <label class="text-xs font-semibold block mb-1">1 USD / USDT in BDT (৳)</label>
+          <input id="new-rate-input" type="number" step="0.01" value="${state.settings.usdToBdtRate}" class="glass-input w-full px-3 py-2.5 rounded-xl font-bold" />
+        </div>
+        <button onclick="saveExchangeRate()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Rate</button>
+      `);
+    };
+
+    window.saveExchangeRate = () => {
+      const val = parseFloat(document.getElementById('new-rate-input').value);
+      if (!val || val <= 0) return showToast('Enter a valid positive rate', 'error');
+      state.settings.usdToBdtRate = round2(val);
+      persistState();
+      closeModal();
+      renderApp();
+      showToast(`Exchange rate updated to ৳${val}`);
+    };
+
+    // =========================================================================
+    // 5. NAVIGATION & ROUTING
+    // =========================================================================
+    const tabTitles = {
+      dashboard: 'Dashboard',
+      accounts: 'Accounts & Balance Reconciliation',
+      trading: 'Trading Workspace',
+      income: 'Income & Pending Income',
+      expenses: 'Expenses & Monthly Limit',
+      transfers: 'Transfers, Cash Out & Binance P2P',
+      assets: 'Hard Assets & Investments',
+      loans: 'Loans, Goals & Recurring Bills',
+      analytics: 'Analytics & Reports',
+      checkin: 'Daily Financial Check-in',
+      ai: 'AI Financial Agent',
+      settings: 'Settings, Security & Backup'
+    };
+
+    window.switchTab = (tab) => {
+      currentTab = tab;
+      document.getElementById('page-title').textContent = tabTitles[tab] || 'NetWorth RQ';
+      document.querySelectorAll('#desktop-nav .nav-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+      });
+      closeModal();
+      renderApp();
+    };
+
+    window.openMobileMoreMenu = () => {
+      openModal('All Sections', `
+        <div class="grid grid-cols-2 gap-2.5 text-sm">
+          <button onclick="switchTab('income')" class="glass-input p-3 rounded-2xl flex items-center gap-2 font-medium"><i data-lucide="arrow-down-left" class="w-4 h-4 text-emerald-500"></i> Income</button>
+          <button onclick="switchTab('expenses')" class="glass-input p-3 rounded-2xl flex items-center gap-2 font-medium"><i data-lucide="arrow-up-right" class="w-4 h-4 text-rose-500"></i> Expenses</button>
+          <button onclick="switchTab('transfers')" class="glass-input p-3 rounded-2xl flex items-center gap-2 font-medium"><i data-lucide="arrow-left-right" class="w-4 h-4 text-sky-500"></i> Transfers & P2P</button>
+          <button onclick="switchTab('assets')" class="glass-input p-3 rounded-2xl flex items-center gap-2 font-medium"><i data-lucide="gem" class="w-4 h-4 text-amber-500"></i> Assets & Inv.</button>
+          <button onclick="switchTab('loans')" class="glass-input p-3 rounded-2xl flex items-center gap-2 font-medium"><i data-lucide="handshake" class="w-4 h-4 text-indigo-500"></i> Loans & Goals</button>
+          <button onclick="switchTab('analytics')" class="glass-input p-3 rounded-2xl flex items-center gap-2 font-medium"><i data-lucide="pie-chart" class="w-4 h-4 text-purple-500"></i> Analytics</button>
+          <button onclick="switchTab('checkin')" class="glass-input p-3 rounded-2xl flex items-center gap-2 font-medium"><i data-lucide="clipboard-check" class="w-4 h-4 text-teal-500"></i> Daily Check-in</button>
+          <button onclick="switchTab('settings')" class="glass-input p-3 rounded-2xl flex items-center gap-2 font-medium"><i data-lucide="settings" class="w-4 h-4"></i> Settings</button>
+        </div>
+      `);
+    };
+
+    // =========================================================================
+    // 6. CORE LEDGER POSTING HELPER
+    // =========================================================================
+    function addLedgerRecord(record) {
+      state.ledger.unshift({
+        id: 'txn_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        date: record.date || new Date().toISOString().slice(0, 10),
+        timestamp: new Date().toISOString(),
+        ...record
+      });
+    }
+
+    // =========================================================================
+    // 7. VIEW RENDERERS
+    // =========================================================================
+    function renderApp() {
+      document.getElementById('header-rate-display').textContent = `৳${state.settings.usdToBdtRate.toFixed(2)}`;
+      const main = document.getElementById('main-content');
+
+      // Destroy previous chart instances to prevent memory leaks
+      Object.values(chartInstances).forEach(c => c.destroy());
+      chartInstances = {};
+
+      if (currentTab === 'dashboard') main.innerHTML = renderDashboard();
+      else if (currentTab === 'accounts') main.innerHTML = renderAccounts();
+      else if (currentTab === 'trading') main.innerHTML = renderTrading();
+      else if (currentTab === 'income') main.innerHTML = renderIncome();
+      else if (currentTab === 'expenses') main.innerHTML = renderExpenses();
+      else if (currentTab === 'transfers') main.innerHTML = renderTransfers();
+      else if (currentTab === 'assets') main.innerHTML = renderAssets();
+      else if (currentTab === 'loans') main.innerHTML = renderLoans();
+      else if (currentTab === 'analytics') { main.innerHTML = renderAnalytics(); setTimeout(initAnalyticsCharts, 30); }
+      else if (currentTab === 'checkin') main.innerHTML = renderCheckin();
+      else if (currentTab === 'ai') main.innerHTML = renderAI();
+      else if (currentTab === 'settings') main.innerHTML = renderSettings();
+
+      lucide.createIcons();
+    }
+
+    // --- 7A. DASHBOARD ---
+    function renderDashboard() {
+      const m = computeMetrics();
+      const pnlColor = m.tradingPnlUsdt >= 0 ? 'text-emerald-500' : 'text-rose-500';
+      const solidAccs = state.accounts.filter(a => a.type === 'SOLID_CASH');
+      const tradeAccs = state.accounts.filter(a => a.type === 'TRADING');
+
+      return `
+        <!-- Section D: TOTAL NET WORTH HERO -->
+        <section class="glass-card rounded-3xl p-6 lg:p-8 relative overflow-hidden">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-muted">Total Net Worth</span>
+              <div class="text-3xl sm:text-5xl font-extrabold tracking-tight mt-1">${fmtBDT(m.totalNetWorthBdt)}</div>
+              <div class="text-sm font-semibold text-muted mt-1">≈ ${fmtUSD(m.totalNetWorthUsd, 'USD')} <span class="text-xs font-normal">(@ ৳${m.rate}/USD)</span></div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="switchTab('income')" class="btn-accent px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add Income</button>
+              <button onclick="switchTab('expenses')" class="glass-input px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5"><i data-lucide="minus" class="w-3.5 h-3.5 text-rose-500"></i> Add Expense</button>
+              <button onclick="switchTab('transfers')" class="glass-input px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5"><i data-lucide="arrow-left-right" class="w-3.5 h-3.5 text-sky-500"></i> P2P / Transfer</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-200/30 text-xs">
+            <div><span class="text-muted block">Month Income</span><span class="text-sm font-bold text-emerald-500">${fmtBDT(m.monthlyIncomeBdt)}</span></div>
+            <div><span class="text-muted block">Month Expense</span><span class="text-sm font-bold text-rose-500">${fmtBDT(m.monthlyExpenseBdt)}</span></div>
+            <div><span class="text-muted block">Receivables</span><span class="text-sm font-bold text-sky-500">${fmtBDT(m.receivablesBdt)}</span></div>
+            <div><span class="text-muted block">Liabilities</span><span class="text-sm font-bold text-amber-500">${fmtBDT(m.liabilitiesBdt)}</span></div>
+          </div>
+        </section>
+
+        <!-- Section A: SOLID CASH -->
+        <section class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-base">A. Solid Cash (Accessible BDT)</h3>
+              <p class="text-xs text-muted">Excludes locked assets, receivables & trading funds</p>
+            </div>
+            <div class="text-right">
+              <span class="text-lg font-extrabold">${fmtBDT(m.solidCashBdt)}</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            ${solidAccs.map(acc => `
+              <div onclick="switchTab('accounts')" class="glass-card rounded-2xl p-4 cursor-pointer hover:-translate-y-0.5">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center"><i data-lucide="${acc.icon || 'wallet'}" class="w-4 h-4"></i></div>
+                  <span class="text-[10px] font-semibold text-muted">BDT</span>
+                </div>
+                <div class="text-xs font-medium text-muted truncate">${acc.name}</div>
+                <div class="text-sm font-bold mt-0.5">${fmtBDT(acc.balance)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+
+        <!-- Section B & C Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Section B: TRADING CAPITAL -->
+          <section class="glass-card rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-base">B. Trading Capital (USD/USDT)</h3>
+                <p class="text-xs text-muted">Cash-flow-adjusted PnL (deposits/withdrawals excluded)</p>
+              </div>
+              <button onclick="switchTab('trading')" class="text-xs font-semibold underline">Open Workspace</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-3.5 rounded-2xl glass-input">
+                <span class="text-[11px] text-muted block">Current Capital</span>
+                <span class="text-lg font-extrabold">${fmtUSD(m.currentTradingUsdt)}</span>
+                <span class="text-[11px] text-muted block">≈ ${fmtBDT(m.tradingCapitalBdt)}</span>
+              </div>
+              <div class="p-3.5 rounded-2xl glass-input">
+                <span class="text-[11px] text-muted block">Actual Trading PnL</span>
+                <span class="text-lg font-extrabold ${pnlColor}">${m.tradingPnlUsdt >= 0 ? '+' : ''}${fmtUSD(m.tradingPnlUsdt)} (${m.tradingPnlPct}%)</span>
+                <span class="text-[11px] ${pnlColor} block">≈ ${m.tradingPnlBdt >= 0 ? '+' : ''}${fmtBDT(m.tradingPnlBdt)}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              ${tradeAccs.map(acc => `
+                <div class="p-2.5 rounded-xl bg-slate-500/5 flex items-center justify-between">
+                  <span class="truncate font-medium">${acc.name}</span>
+                  <span class="font-bold">${fmtUSD(acc.balance, '')}</span>
+                </div>
+              `).join('')}
+            </div>
+          </section>
+
+          <!-- Section C: HARD ASSETS & INVESTMENTS -->
+          <section class="glass-card rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-base">C. Hard Assets & Investments</h3>
+                <p class="text-xs text-muted">Locked resale values & long-term holdings</p>
+              </div>
+              <button onclick="switchTab('assets')" class="text-xs font-semibold underline">Manage</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-3.5 rounded-2xl glass-input">
+                <span class="text-[11px] text-muted block">Owned Hard Assets</span>
+                <span class="text-lg font-extrabold">${fmtBDT(m.ownedHardAssetsBdt)}</span>
+                <span class="text-[11px] text-muted block">${state.hardAssets.filter(a => a.status === 'OWNED').length} active items</span>
+              </div>
+              <div class="p-3.5 rounded-2xl glass-input">
+                <span class="text-[11px] text-muted block">Investments (Gold/DPS/Stocks)</span>
+                <span class="text-lg font-extrabold">${fmtBDT(m.activeInvestmentsBdt)}</span>
+                <span class="text-[11px] text-muted block">${state.investments.filter(i => i.status === 'ACTIVE').length} active holdings</span>
+              </div>
+            </div>
+
+            <div class="text-xs text-muted pt-1">
+              Recent Ledger Entries: <span class="font-bold text-current">${state.ledger.length}</span> recorded transactions.
+            </div>
+          </section>
+        </div>
+      `;
+    }
+
+    // --- 7B. ACCOUNTS & BALANCE RECONCILIATION ---
+    function renderAccounts() {
+      return `
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-muted">Manage BDT & USD/USDT wallets. Use Reconciliation to audit actual vs system balances.</p>
+          <div class="flex gap-2">
+            <button onclick="openAddAccountModal()" class="btn-accent px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5"><i data-lucide="plus" class="w-4 h-4"></i> Add Account</button>
+            <button onclick="openReconcileModal()" class="glass-input px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5"><i data-lucide="scale" class="w-4 h-4 text-sky-500"></i> Reconcile Balance</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${state.accounts.map(acc => `
+            <div class="glass-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${acc.type === 'SOLID_CASH' ? 'bg-emerald-500/15 text-emerald-600' : 'bg-sky-500/15 text-sky-600'}">${acc.type === 'SOLID_CASH' ? 'SOLID CASH' : 'TRADING'}</span>
+                  <h4 class="font-bold text-base mt-1.5">${acc.name}</h4>
+                </div>
+                <span class="text-xs font-bold text-muted">${acc.currency}</span>
+              </div>
+              <div>
+                <div class="text-2xl font-extrabold">${fmtCurrency(acc.balance, acc.currency)}</div>
+                <div class="text-[11px] text-muted mt-0.5">Opening: ${fmtCurrency(acc.openingBalance, acc.currency)}</div>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-slate-200/30">
+                <button onclick="openReconcileModal('${acc.id}')" class="flex-1 glass-input py-1.5 rounded-xl text-xs font-semibold">Reconcile</button>
+                <button onclick="viewAccountHistory('${acc.id}')" class="flex-1 glass-input py-1.5 rounded-xl text-xs font-semibold">History</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Recent Reconciliation Audit Log -->
+        <div class="glass-card rounded-3xl p-6 space-y-3">
+          <h3 class="font-bold text-base">Reconciliation Audit History</h3>
+          ${state.reconciliations.length === 0 ? '<p class="text-xs text-muted">No reconciliations recorded yet.</p>' : `
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="text-muted border-b border-slate-200/30">
+                  <tr><th class="py-2">Date</th><th>Account</th><th>System</th><th>Actual</th><th>Diff</th><th>Status</th></tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200/20">
+                  ${state.reconciliations.slice(0, 10).map(r => {
+                    const acc = state.accounts.find(a => a.id === r.accountId);
+                    return `<tr>
+                      <td class="py-2">${r.date}</td>
+                      <td class="font-semibold">${acc ? acc.name : r.accountId}</td>
+                      <td>${r.systemBalance}</td>
+                      <td>${r.actualBalance}</td>
+                      <td class="${r.difference >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-bold">${r.difference >= 0 ? '+' : ''}${r.difference}</td>
+                      <td><span class="px-2 py-0.5 rounded-full bg-slate-500/10">${r.status}</span></td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    window.openAddAccountModal = () => {
+      openModal('Add Custom Account / Wallet', `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Account Name</label><input id="new-acc-name" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="e.g., Dutch Bangla Bank / Phantom" /></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-semibold">Category</label>
+              <select id="new-acc-type" class="glass-input w-full px-3 py-2 rounded-xl mt-1">
+                <option value="SOLID_CASH">Solid Cash (BDT)</option>
+                <option value="TRADING">Trading / Web3 (USDT)</option>
+              </select>
+            </div>
+            <div><label class="text-xs font-semibold">Currency</label>
+              <select id="new-acc-curr" class="glass-input w-full px-3 py-2 rounded-xl mt-1">
+                <option value="BDT">BDT (৳)</option>
+                <option value="USDT">USDT ($)</option>
+                <option value="USD">USD ($)</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="text-xs font-semibold">Opening Balance</label><input id="new-acc-bal" type="number" step="0.01" value="0" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <button onclick="saveNewAccount()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Create Account</button>
+        </div>
+      `);
+    };
+
+    window.saveNewAccount = () => {
+      const name = document.getElementById('new-acc-name').value.trim();
+      const type = document.getElementById('new-acc-type').value;
+      const currency = document.getElementById('new-acc-curr').value;
+      const bal = round2(parseFloat(document.getElementById('new-acc-bal').value) || 0);
+      if (!name) return showToast('Enter account name', 'error');
+
+      const id = 'acc_' + Date.now();
+      state.accounts.push({ id, name, type, currency, openingBalance: bal, balance: bal, icon: type === 'SOLID_CASH' ? 'wallet' : 'coins' });
+      if (bal !== 0) {
+        addLedgerRecord({ type: 'OPENING_BALANCE', destAccountId: id, originalAmount: bal, netAmount: bal, fee: 0, currency, description: `Opening balance for ${name}` });
+      }
+      persistState();
+      closeModal();
+      renderApp();
+      showToast(`Account "${name}" created`);
+    };
+
+    window.openReconcileModal = (preselectedId = '') => {
+      const opts = state.accounts.map(a => `<option value="${a.id}" ${a.id === preselectedId ? 'selected' : ''}>${a.name} (${a.currency} ${a.balance})</option>`).join('');
+      openModal('Balance Reconciliation Engine', `
+        <p class="text-xs text-muted">Compare system balance against your actual external balance. Adjustments require confirmation and create an auditable ledger record.</p>
+        <div><label class="text-xs font-semibold">Select Account</label><select id="rec-acc" onchange="updateRecPreview()" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${opts}</select></div>
+        <div><label class="text-xs font-semibold">Actual External Balance</label><input id="rec-actual" type="number" step="0.01" oninput="updateRecPreview()" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="Enter exact balance in your app/wallet" /></div>
+        <div id="rec-preview" class="p-3 rounded-xl bg-slate-500/10 text-xs font-semibold">Enter actual balance to check discrepancy.</div>
+        <div><label class="text-xs font-semibold">Reason / Notes</label><input id="rec-notes" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="e.g., Missed small fee / Cash count check" /></div>
+        <button onclick="confirmReconciliation()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Confirm & Post Reconciliation</button>
+      `);
+    };
+
+    window.updateRecPreview = () => {
+      const acc = state.accounts.find(a => a.id === document.getElementById('rec-acc').value);
+      const actual = parseFloat(document.getElementById('rec-actual').value);
+      const box = document.getElementById('rec-preview');
+      if (!acc || isNaN(actual)) { box.textContent = 'Enter actual balance to check discrepancy.'; return; }
+      const diff = round2(actual - acc.balance);
+      if (diff === 0) {
+        box.innerHTML = `<span class="text-emerald-500">Status: RECONCILED (Difference: 0)</span>`;
+      } else {
+        box.innerHTML = `<span class="text-amber-500">Warning: Discrepancy of ${diff > 0 ? '+' : ''}${diff} ${acc.currency}. Posting will create a BALANCE_ADJUSTMENT ledger entry.</span>`;
+      }
+    };
+
+    window.confirmReconciliation = () => {
+      const acc = state.accounts.find(a => a.id === document.getElementById('rec-acc').value);
+      const actual = parseFloat(document.getElementById('rec-actual').value);
+      const notes = document.getElementById('rec-notes').value.trim() || 'Manual reconciliation';
+      if (!acc || isNaN(actual)) return showToast('Enter valid actual balance', 'error');
+
+      const sys = acc.balance;
+      const diff = round2(actual - sys);
+      const status = diff === 0 ? 'RECONCILED' : 'DISCREPANCY_ADJUSTED';
+
+      if (diff !== 0) {
+        acc.balance = round2(actual);
+        addLedgerRecord({
+          type: 'BALANCE_ADJUSTMENT',
+          destAccountId: acc.id,
+          originalAmount: Math.abs(diff),
+          netAmount: diff,
+          fee: 0,
+          currency: acc.currency,
+          description: `Reconciliation adjustment (${diff > 0 ? '+' : ''}${diff}): ${notes}`
+        });
+      }
+
+      state.reconciliations.unshift({
+        id: 'rec_' + Date.now(),
+        accountId: acc.id,
+        systemBalance: sys,
+        actualBalance: actual,
+        difference: diff,
+        status,
+        date: new Date().toISOString().slice(0, 10),
+        notes
+      });
+
+      persistState();
+      closeModal();
+      renderApp();
+      showToast(diff === 0 ? 'Account verified as Reconciled!' : 'Reconciliation adjustment posted to ledger');
+    };
+
+    window.viewAccountHistory = (accId) => {
+      const acc = state.accounts.find(a => a.id === accId);
+      const txns = state.ledger.filter(l => l.sourceAccountId === accId || l.destAccountId === accId);
+      openModal(`${acc.name} — Ledger History`, txns.length === 0 ? '<p class="text-xs text-muted">No transactions yet.</p>' : `
+        <div class="space-y-2 max-h-96 overflow-y-auto">
+          ${txns.map(t => `
+            <div class="p-3 rounded-xl glass-input text-xs flex justify-between items-center">
+              <div>
+                <div class="font-bold">${t.type} ${t.category ? '• ' + t.category : ''}</div>
+                <div class="text-muted">${t.date} — ${t.description || ''}</div>
+              </div>
+              <div class="font-bold">${t.originalAmount} ${t.currency}</div>
+            </div>
+          `).join('')}
+        </div>
+      `);
+    };
+
+    // --- 7C. TRADING WORKSPACE ---
+    function renderTrading() {
+      const m = computeMetrics();
+      const pnlColor = m.tradingPnlUsdt >= 0 ? 'text-emerald-500' : 'text-rose-500';
+      const closedTrades = state.trading.trades.filter(t => t.status === 'CLOSED');
+      const winningTrades = closedTrades.filter(t => t.realizedPnl > 0);
+      const winRate = closedTrades.length > 0 ? round2((winningTrades.length / closedTrades.length) * 100) : 0;
+
+      return `
+        <!-- Top Controls & Trading Mode Toggle -->
+        <div class="glass-card rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 class="font-bold text-base">Cash-Flow-Adjusted Trading Engine</h3>
+            <p class="text-xs text-muted">Actual PnL = Current Capital - Opening Capital - (Deposits - Withdrawals)</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 text-xs font-bold cursor-pointer glass-input px-3 py-2 rounded-xl">
+              <input type="checkbox" ${state.settings.tradingMode ? 'checked' : ''} onchange="toggleTradingMode(this.checked)" class="w-4 h-4 accent-emerald-500" />
+              Trading Mode: ${state.settings.tradingMode ? 'ON (Journal Active)' : 'OFF (Capital Only)'}
+            </label>
+            <button onclick="openTradingCapitalModal()" class="btn-accent px-4 py-2 rounded-xl text-xs font-semibold">Edit Capital Flows</button>
+          </div>
+        </div>
+
+        <!-- Trading KPI Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="glass-card rounded-2xl p-4">
+            <span class="text-xs text-muted">Opening Capital</span>
+            <div class="text-xl font-extrabold mt-1">${fmtUSD(m.openingCap)}</div>
+            <span class="text-[11px] text-muted">Net Flow: ${m.netExternalCashFlow >= 0 ? '+' : ''}${fmtUSD(m.netExternalCashFlow)}</span>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <span class="text-xs text-muted">Current Capital</span>
+            <div class="text-xl font-extrabold mt-1">${fmtUSD(m.currentTradingUsdt)}</div>
+            <span class="text-[11px] text-muted">≈ ${fmtBDT(m.tradingCapitalBdt)}</span>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <span class="text-xs text-muted">Adjusted Trading PnL</span>
+            <div class="text-xl font-extrabold mt-1 ${pnlColor}">${m.tradingPnlUsdt >= 0 ? '+' : ''}${fmtUSD(m.tradingPnlUsdt)}</div>
+            <span class="text-[11px] ${pnlColor}">${m.tradingPnlPct}% | ≈ ${fmtBDT(m.tradingPnlBdt)}</span>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <span class="text-xs text-muted">Journal Win Rate</span>
+            <div class="text-xl font-extrabold mt-1">${winRate}%</div>
+            <span class="text-[11px] text-muted">${winningTrades.length}W / ${closedTrades.length - winningTrades.length}L (${closedTrades.length} closed)</span>
+          </div>
+        </div>
+
+        <!-- Live Crypto Market Prices -->
+        <div class="glass-card rounded-3xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-sm">Live Crypto Market Prices (Binance API + Manual Override)</h4>
+            <button onclick="fetchLiveCryptoPrices()" class="glass-input px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Live</button>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            ${Object.entries(state.livePrices).map(([coin, info]) => `
+              <div onclick="overrideCoinPrice('${coin}')" class="glass-input p-3 rounded-2xl cursor-pointer hover:opacity-85">
+                <div class="flex justify-between text-xs font-bold"><span>${coin}</span><span class="text-[10px] text-muted">${info.manual ? 'Manual' : info.updated ? 'Live' : 'Click'}</span></div>
+                <div class="text-sm font-extrabold mt-1">${info.price > 0 ? '$' + Number(info.price).toLocaleString() : '—'}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Daily Trading Capital History -->
+        <div class="glass-card rounded-3xl p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="font-bold text-sm">Daily Trading Capital History</h4>
+            <button onclick="recordDailyTradingSnapshot()" class="btn-accent px-3 py-1.5 rounded-xl text-xs font-semibold">+ Log Today's Snapshot</button>
+          </div>
+          ${state.trading.snapshots.length === 0 ? '<p class="text-xs text-muted">No daily snapshots logged yet.</p>' : `
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-left">
+                <thead class="text-muted border-b border-slate-200/30"><tr><th class="py-2">Date</th><th>Closing Capital (USDT)</th><th>Daily Change</th><th>Notes</th></tr></thead>
+                <tbody class="divide-y divide-slate-200/20">
+                  ${state.trading.snapshots.map(s => `
+                    <tr>
+                      <td class="py-2 font-medium">${s.date}</td>
+                      <td class="font-bold">${fmtUSD(s.capitalUsdt)}</td>
+                      <td class="${s.changeUsdt >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-bold">${s.changeUsdt >= 0 ? '+' : ''}${s.changeUsdt} USDT</td>
+                      <td class="text-muted">${s.notes || '—'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+
+        <!-- Trading Journal (Active when Trading Mode ON) -->
+        ${state.settings.tradingMode ? `
+          <div class="glass-card rounded-3xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm">Complete Trading Journal</h4>
+              <button onclick="openAddTradeModal()" class="btn-accent px-3 py-1.5 rounded-xl text-xs font-semibold">+ Log Trade</button>
+            </div>
+            ${state.trading.trades.length === 0 ? '<p class="text-xs text-muted">No trades logged yet.</p>' : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                  <thead class="text-muted border-b border-slate-200/30">
+                    <tr><th class="py-2">Date</th><th>Pair</th><th>Side</th><th>Entry</th><th>Exit</th><th>Qty</th><th>Fee</th><th>Net PnL</th><th>Status</th></tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200/20">
+                    ${state.trading.trades.map(t => `
+                      <tr>
+                        <td class="py-2">${t.date}</td>
+                        <td class="font-bold">${t.pair} <span class="text-[10px] text-muted">(${t.exchange})</span></td>
+                        <td class="${t.side === 'BUY' ? 'text-emerald-500' : 'text-rose-500'} font-bold">${t.side}</td>
+                        <td>$${t.entryPrice}</td>
+                        <td>${t.exitPrice ? '$' + t.exitPrice : '—'}</td>
+                        <td>${t.qty}</td>
+                        <td>$${t.fee}</td>
+                        <td class="${t.realizedPnl >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-bold">${t.status === 'CLOSED' ? (t.realizedPnl >= 0 ? '+' : '') + '$' + t.realizedPnl : 'Open'}</td>
+                        <td><span class="px-2 py-0.5 rounded-full bg-slate-500/10">${t.status}</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        ` : ''}
+      `;
+    }
+
+    window.toggleTradingMode = (checked) => {
+      state.settings.tradingMode = checked;
+      persistState();
+      renderApp();
+    };
+
+    window.openTradingCapitalModal = () => {
+      openModal('Trading Capital & Cash Flows (USDT)', `
+        <p class="text-xs text-muted">Deposits and withdrawals are strictly separated so they never distort your trading PnL.</p>
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Original Opening Capital (USDT)</label><input id="tc-open" type="number" step="0.01" value="${state.trading.openingCapitalUsdt}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Total Additional Deposits (USDT)</label><input id="tc-dep" type="number" step="0.01" value="${state.trading.additionalDepositsUsdt}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Total Withdrawals (USDT)</label><input id="tc-with" type="number" step="0.01" value="${state.trading.withdrawalsUsdt}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <button onclick="saveTradingCapitalFlows()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Capital Flows</button>
+        </div>
+      `);
+    };
+
+    window.saveTradingCapitalFlows = () => {
+      state.trading.openingCapitalUsdt = round2(parseFloat(document.getElementById('tc-open').value) || 0);
+      state.trading.additionalDepositsUsdt = round2(parseFloat(document.getElementById('tc-dep').value) || 0);
+      state.trading.withdrawalsUsdt = round2(parseFloat(document.getElementById('tc-with').value) || 0);
+      persistState();
+      closeModal();
+      renderApp();
+      showToast('Trading capital flows updated');
+    };
+
+    window.fetchLiveCryptoPrices = async () => {
+      try {
+        showToast('Fetching live Binance prices...');
+        const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
+        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${encodeURIComponent(JSON.stringify(symbols))}`);
+        if (!res.ok) throw new Error('API unavailable');
+        const data = await res.json();
+        data.forEach(item => {
+          const coin = item.symbol.replace('USDT', '');
+          state.livePrices[coin] = { price: round2(parseFloat(item.price)), manual: false, updated: new Date().toLocaleTimeString() };
+        });
+        persistState();
+        renderApp();
+        showToast('Live crypto prices updated');
+      } catch (e) {
+        showToast('Live API unavailable. Click any coin to enter manual price.', 'warning');
+      }
+    };
+
+    window.overrideCoinPrice = (coin) => {
+      openModal(`Manual Price Override — ${coin}`, `
+        <div><label class="text-xs font-semibold">Price in USD ($)</label><input id="manual-coin-price" type="number" step="0.0001" value="${state.livePrices[coin].price}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+        <button onclick="saveManualCoinPrice('${coin}')" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Price</button>
+      `);
+    };
+
+    window.saveManualCoinPrice = (coin) => {
+      const p = parseFloat(document.getElementById('manual-coin-price').value);
+      if (isNaN(p) || p < 0) return showToast('Invalid price', 'error');
+      state.livePrices[coin] = { price: p, manual: true, updated: new Date().toLocaleTimeString() };
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    window.recordDailyTradingSnapshot = () => {
+      const m = computeMetrics();
+      const prev = state.trading.snapshots[0]?.capitalUsdt ?? m.openingCap;
+      const change = round2(m.currentTradingUsdt - prev);
+      state.trading.snapshots.unshift({
+        id: 'snap_' + Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+        capitalUsdt: m.currentTradingUsdt,
+        changeUsdt: change,
+        notes: 'Daily closing snapshot'
+      });
+      persistState();
+      renderApp();
+      showToast('Daily trading snapshot saved');
+    };
+
+    window.openAddTradeModal = () => {
+      openModal('Log Trade in Journal', `
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-xs font-semibold">Exchange</label><input id="tr-ex" value="Binance" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Pair</label><input id="tr-pair" placeholder="BTC/USDT" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Side</label><select id="tr-side" class="glass-input w-full px-3 py-2 rounded-xl mt-1"><option value="BUY">BUY / LONG</option><option value="SELL">SELL / SHORT</option></select></div>
+          <div><label class="text-xs font-semibold">Status</label><select id="tr-status" class="glass-input w-full px-3 py-2 rounded-xl mt-1"><option value="CLOSED">CLOSED</option><option value="OPEN">OPEN</option></select></div>
+          <div><label class="text-xs font-semibold">Entry Price ($)</label><input id="tr-entry" type="number" step="any" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Exit Price ($)</label><input id="tr-exit" type="number" step="any" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Quantity</label><input id="tr-qty" type="number" step="any" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Trading Fee ($)</label><input id="tr-fee" type="number" step="any" value="0" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+        </div>
+        <button onclick="saveTradeEntry()" class="btn-accent w-full py-2.5 rounded-xl font-semibold mt-2">Save Trade</button>
+      `);
+    };
+
+    window.saveTradeEntry = () => {
+      const exchange = document.getElementById('tr-ex').value.trim();
+      const pair = document.getElementById('tr-pair').value.trim().toUpperCase();
+      const side = document.getElementById('tr-side').value;
+      const status = document.getElementById('tr-status').value;
+      const entryPrice = parseFloat(document.getElementById('tr-entry').value) || 0;
+      const exitPrice = parseFloat(document.getElementById('tr-exit').value) || 0;
+      const qty = parseFloat(document.getElementById('tr-qty').value) || 0;
+      const fee = parseFloat(document.getElementById('tr-fee').value) || 0;
+      if (!pair || !entryPrice || !qty) return showToast('Fill pair, entry price, and quantity', 'error');
+
+      let realizedPnl = 0;
+      if (status === 'CLOSED' && exitPrice > 0) {
+        const raw = side === 'BUY' ? (exitPrice - entryPrice) * qty : (entryPrice - exitPrice) * qty;
+        realizedPnl = round2(raw - fee);
+      }
+
+      state.trading.trades.unshift({
+        id: 'tr_' + Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+        exchange, pair, side, status, entryPrice, exitPrice, qty, fee, realizedPnl
+      });
+      persistState();
+      closeModal();
+      renderApp();
+      showToast('Trade logged to journal');
+    };
+
+    // --- 7D. INCOME & PENDING INCOME ---
+    function renderIncome() {
+      const accOpts = state.accounts.map(a => `<option value="${a.id}">${a.name} (${a.currency})</option>`).join('');
+      const catOpts = state.incomeCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+      const incomes = state.ledger.filter(l => l.type === 'INCOME');
+
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Add Confirmed Income -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <h3 class="font-bold text-base">Record Confirmed Income</h3>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="col-span-2"><label class="text-xs font-semibold">Title / Source</label><input id="inc-title" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="e.g., Binance Airdrop / Client Payment" /></div>
+              <div><label class="text-xs font-semibold">Category</label><select id="inc-cat" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${catOpts}</select></div>
+              <div><label class="text-xs font-semibold">Receiving Account</label><select id="inc-acc" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${accOpts}</select></div>
+              <div><label class="text-xs font-semibold">Gross Amount</label><input id="inc-amt" type="number" step="0.01" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+              <div><label class="text-xs font-semibold">Fee (if any)</label><input id="inc-fee" type="number" step="0.01" value="0" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            </div>
+            <button onclick="postIncome()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Credit Account & Save</button>
+          </div>
+
+          <!-- Pending Income -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-base">Pending Income (Unclaimed)</h3>
+              <button onclick="openAddPendingModal()" class="glass-input px-3 py-1.5 rounded-xl text-xs font-semibold">+ Add Pending</button>
+            </div>
+            <p class="text-xs text-muted">Excluded from Solid Cash & Net Worth until confirmed received.</p>
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+              ${state.pendingIncomes.length === 0 ? '<p class="text-xs text-muted">No pending incomes.</p>' : state.pendingIncomes.map(p => `
+                <div class="p-3 rounded-2xl glass-input flex items-center justify-between gap-2 text-xs">
+                  <div>
+                    <div class="font-bold">${p.title} <span class="text-muted">(${p.category})</span></div>
+                    <div class="text-muted">${p.amount} ${p.currency} • Expected: ${p.expectedDate || 'TBD'}</div>
+                  </div>
+                  ${p.status === 'PENDING'
+                    ? `<button onclick="openConfirmPendingModal('${p.id}')" class="btn-accent px-3 py-1.5 rounded-xl font-semibold shrink-0">Confirm</button>`
+                    : `<span class="px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-600 font-bold">Received</span>`}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Income History -->
+        <div class="glass-card rounded-3xl p-6 space-y-3">
+          <h3 class="font-bold text-base">Confirmed Income History</h3>
+          ${incomes.length === 0 ? '<p class="text-xs text-muted">No income recorded yet.</p>' : `
+            <div class="space-y-2">
+              ${incomes.slice(0, 15).map(i => `
+                <div class="p-3 rounded-2xl glass-input flex justify-between items-center text-xs">
+                  <div><span class="font-bold">${i.description}</span> <span class="text-muted">• ${i.category} • ${i.date}</span></div>
+                  <div class="font-bold text-emerald-500">+${fmtCurrency(i.netAmount, i.currency)}</div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    window.postIncome = () => {
+      const title = document.getElementById('inc-title').value.trim();
+      const category = document.getElementById('inc-cat').value;
+      const accId = document.getElementById('inc-acc').value;
+      const amt = parseFloat(document.getElementById('inc-amt').value) || 0;
+      const fee = parseFloat(document.getElementById('inc-fee').value) || 0;
+      const acc = state.accounts.find(a => a.id === accId);
+      if (!title || amt <= 0 || !acc) return showToast('Fill title and valid amount', 'error');
+
+      const net = round2(amt - fee);
+      acc.balance = round2(acc.balance + net);
+      addLedgerRecord({ type: 'INCOME', destAccountId: acc.id, originalAmount: amt, fee, netAmount: net, currency: acc.currency, category, description: title });
+      persistState();
+      renderApp();
+      showToast(`Credited ${net} ${acc.currency} to ${acc.name}`);
+    };
+
+    window.openAddPendingModal = () => {
+      const catOpts = state.incomeCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+      openModal('Add Pending Income', `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Title</label><input id="pi-title" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="e.g., Unclaimed Airdrop" /></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-semibold">Category</label><select id="pi-cat" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${catOpts}</select></div>
+            <div><label class="text-xs font-semibold">Currency</label><select id="pi-curr" class="glass-input w-full px-3 py-2 rounded-xl mt-1"><option value="USDT">USDT</option><option value="BDT">BDT</option></select></div>
+            <div><label class="text-xs font-semibold">Expected Amount</label><input id="pi-amt" type="number" step="0.01" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            <div><label class="text-xs font-semibold">Expected Date</label><input id="pi-date" type="date" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          </div>
+          <button onclick="savePendingIncome()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Pending</button>
+        </div>
+      `);
+    };
+
+    window.savePendingIncome = () => {
+      const title = document.getElementById('pi-title').value.trim();
+      const category = document.getElementById('pi-cat').value;
+      const currency = document.getElementById('pi-curr').value;
+      const amount = parseFloat(document.getElementById('pi-amt').value) || 0;
+      const expectedDate = document.getElementById('pi-date').value;
+      if (!title || amount <= 0) return showToast('Enter title and amount', 'error');
+      state.pendingIncomes.unshift({ id: 'pi_' + Date.now(), title, category, currency, amount, expectedDate, status: 'PENDING' });
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    window.openConfirmPendingModal = (id) => {
+      const p = state.pendingIncomes.find(x => x.id === id);
+      if (!p || p.status !== 'PENDING') return showToast('Already confirmed', 'warning');
+      const accOpts = state.accounts.filter(a => a.currency === p.currency).map(a => `<option value="${a.id}">${a.name} (${a.currency})</option>`).join('');
+      openModal(`Confirm Received: ${p.title}`, `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Receiving Account (${p.currency})</label><select id="cpi-acc" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${accOpts}</select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-semibold">Actual Amount</label><input id="cpi-amt" type="number" step="0.01" value="${p.amount}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            <div><label class="text-xs font-semibold">Fee</label><input id="cpi-fee" type="number" step="0.01" value="0" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          </div>
+          <button onclick="finalizePendingIncome('${id}')" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Confirm & Credit Account</button>
+        </div>
+      `);
+    };
+
+    window.finalizePendingIncome = (id) => {
+      const p = state.pendingIncomes.find(x => x.id === id);
+      if (!p || p.status !== 'PENDING') return showToast('Duplicate confirmation blocked', 'error');
+      const acc = state.accounts.find(a => a.id === document.getElementById('cpi-acc').value);
+      const amt = parseFloat(document.getElementById('cpi-amt').value) || 0;
+      const fee = parseFloat(document.getElementById('cpi-fee').value) || 0;
+      const net = round2(amt - fee);
+      acc.balance = round2(acc.balance + net);
+      p.status = 'RECEIVED';
+      addLedgerRecord({ type: 'INCOME', destAccountId: acc.id, originalAmount: amt, fee, netAmount: net, currency: acc.currency, category: p.category, description: `${p.title} (Confirmed Pending)` });
+      persistState();
+      closeModal();
+      renderApp();
+      showToast('Pending income confirmed & credited');
+    };
+
+    // --- 7E. EXPENSES & MONTHLY LIMIT ---
+    function renderExpenses() {
+      const m = computeMetrics();
+      const limit = Number(state.settings.monthlyExpenseLimitBdt) || 0;
+      const pct = limit > 0 ? Math.min(100, round2((m.monthlyExpenseBdt / limit) * 100)) : 0;
+      const remaining = limit > 0 ? round2(limit - m.monthlyExpenseBdt) : 0;
+      const accOpts = state.accounts.map(a => `<option value="${a.id}">${a.name} (${a.currency} ${a.balance})</option>`).join('');
+      const catOpts = state.expenseCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+      const expenses = state.ledger.filter(l => l.type === 'EXPENSE');
+
+      return `
+        <!-- Monthly Budget Limit Bar -->
+        <div class="glass-card rounded-3xl p-6 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-base">Monthly Spending Limit</h3>
+              <p class="text-xs text-muted">Spent: <strong class="text-rose-500">${fmtBDT(m.monthlyExpenseBdt)}</strong> / Limit: <strong>${limit > 0 ? fmtBDT(limit) : 'Not Set'}</strong></p>
+            </div>
+            <button onclick="openBudgetLimitModal()" class="glass-input px-3 py-1.5 rounded-xl text-xs font-semibold">Set Monthly Limit</button>
+          </div>
+          <div class="w-full h-3 rounded-full bg-slate-500/15 overflow-hidden">
+            <div class="h-full rounded-full transition-all ${pct >= 90 ? 'bg-rose-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'}" style="width: ${pct}%"></div>
+          </div>
+          <div class="flex justify-between text-xs text-muted">
+            <span>${pct}% Used</span>
+            <span>${limit > 0 ? (remaining >= 0 ? `Remaining: ${fmtBDT(remaining)}` : `Overspent by ${fmtBDT(Math.abs(remaining))}!`) : 'Set a monthly limit to track pace'}</span>
+          </div>
+        </div>
+
+        <!-- Add Expense Form -->
+        <div class="glass-card rounded-3xl p-6 space-y-3">
+          <h3 class="font-bold text-base">Record Expense</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <input id="exp-title" class="glass-input px-3 py-2 rounded-xl text-sm" placeholder="Expense title (e.g., Bike Fuel)" />
+            <select id="exp-cat" class="glass-input px-3 py-2 rounded-xl text-sm">${catOpts}</select>
+            <select id="exp-acc" class="glass-input px-3 py-2 rounded-xl text-sm">${accOpts}</select>
+            <input id="exp-amt" type="number" step="0.01" class="glass-input px-3 py-2 rounded-xl text-sm" placeholder="Amount" />
+            <input id="exp-fee" type="number" step="0.01" value="0" class="glass-input px-3 py-2 rounded-xl text-sm" placeholder="Fee (0)" />
+          </div>
+          <button onclick="postExpense()" class="btn-accent px-6 py-2.5 rounded-xl text-sm font-semibold">Deduct & Save Expense</button>
+        </div>
+
+        <!-- Recent Expenses -->
+        <div class="glass-card rounded-3xl p-6 space-y-3">
+          <h3 class="font-bold text-base">Expense History</h3>
+          ${expenses.length === 0 ? '<p class="text-xs text-muted">No expenses recorded yet.</p>' : `
+            <div class="space-y-2">
+              ${expenses.slice(0, 20).map(e => `
+                <div class="p-3 rounded-2xl glass-input flex justify-between items-center text-xs">
+                  <div><span class="font-bold">${e.description}</span> <span class="text-muted">• ${e.category} • ${e.date}</span></div>
+                  <div class="font-bold text-rose-500">-${fmtCurrency(Number(e.originalAmount) + Number(e.fee), e.currency)}</div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    window.openBudgetLimitModal = () => {
+      openModal('Set Overall Monthly Expense Limit (BDT)', `
+        <div><label class="text-xs font-semibold">Monthly Budget (৳)</label><input id="budget-limit-val" type="number" value="${state.settings.monthlyExpenseLimitBdt}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+        <button onclick="saveBudgetLimit()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Limit</button>
+      `);
+    };
+
+    window.saveBudgetLimit = () => {
+      state.settings.monthlyExpenseLimitBdt = round2(parseFloat(document.getElementById('budget-limit-val').value) || 0);
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    window.postExpense = () => {
+      const title = document.getElementById('exp-title').value.trim();
+      const category = document.getElementById('exp-cat').value;
+      const accId = document.getElementById('exp-acc').value;
+      const amt = parseFloat(document.getElementById('exp-amt').value) || 0;
+      const fee = parseFloat(document.getElementById('exp-fee').value) || 0;
+      const acc = state.accounts.find(a => a.id === accId);
+      if (!title || amt <= 0 || !acc) return showToast('Fill title and valid amount', 'error');
+
+      const totalDeduct = round2(amt + fee);
+      acc.balance = round2(acc.balance - totalDeduct);
+      addLedgerRecord({ type: 'EXPENSE', sourceAccountId: acc.id, originalAmount: amt, fee, netAmount: totalDeduct, currency: acc.currency, category, description: title });
+      persistState();
+      renderApp();
+      showToast(`Deducted ${totalDeduct} ${acc.currency} from ${acc.name}`);
+    };
+
+    // --- 7F. TRANSFERS & BINANCE P2P ---
+    function renderTransfers() {
+      const accOpts = state.accounts.map(a => `<option value="${a.id}">${a.name} (${a.currency} ${a.balance})</option>`).join('');
+      const usdtAccs = state.accounts.filter(a => a.currency !== 'BDT').map(a => `<option value="${a.id}">${a.name} (${a.balance} ${a.currency})</option>`).join('');
+      const bdtAccs = state.accounts.filter(a => a.currency === 'BDT').map(a => `<option value="${a.id}">${a.name} (৳${a.balance})</option>`).join('');
+
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Internal Transfer -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <h3 class="font-bold text-base">Internal Transfer / Cash Out</h3>
+            <p class="text-xs text-muted">Never counted as income or expense. Fees are tracked separately.</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="text-xs font-semibold">From Account</label><select id="tf-src" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${accOpts}</select></div>
+              <div><label class="text-xs font-semibold">To Account</label><select id="tf-dst" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${accOpts}</select></div>
+              <div><label class="text-xs font-semibold">Amount</label><input id="tf-amt" type="number" step="0.01" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+              <div><label class="text-xs font-semibold">Transfer Fee</label><input id="tf-fee" type="number" step="0.01" value="0" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            </div>
+            <button onclick="postTransfer()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Execute Transfer</button>
+          </div>
+
+          <!-- Dedicated Binance P2P Sell -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <h3 class="font-bold text-base">Binance P2P Sell (USDT → BDT)</h3>
+            <p class="text-xs text-muted">Uses exact P2P rate. Deducts USDT, credits net BDT after fees.</p>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="text-xs font-semibold">Source USDT Wallet</label><select id="p2p-src" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${usdtAccs}</select></div>
+              <div><label class="text-xs font-semibold">Destination BDT Account</label><select id="p2p-dst" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${bdtAccs}</select></div>
+              <div><label class="text-xs font-semibold">USDT Amount</label><input id="p2p-usdt" type="number" step="0.01" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="100" /></div>
+              <div><label class="text-xs font-semibold">Actual P2P Rate (৳)</label><input id="p2p-rate" type="number" step="0.01" value="${state.settings.usdToBdtRate}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+              <div class="col-span-2"><label class="text-xs font-semibold">P2P / Cashout Fee (৳)</label><input id="p2p-fee" type="number" step="0.01" value="0" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            </div>
+            <button onclick="postP2PSell()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Execute P2P Sell</button>
+          </div>
+        </div>
+      `;
+    }
+
+    window.postTransfer = () => {
+      const src = state.accounts.find(a => a.id === document.getElementById('tf-src').value);
+      const dst = state.accounts.find(a => a.id === document.getElementById('tf-dst').value);
+      const amt = parseFloat(document.getElementById('tf-amt').value) || 0;
+      const fee = parseFloat(document.getElementById('tf-fee').value) || 0;
+      if (!src || !dst || src.id === dst.id || amt <= 0) return showToast('Select two different accounts and valid amount', 'error');
+      if (src.currency !== dst.currency) return showToast('Use P2P form for cross-currency transfers', 'warning');
+
+      src.balance = round2(src.balance - (amt + fee));
+      dst.balance = round2(dst.balance + amt);
+      addLedgerRecord({ type: 'TRANSFER', sourceAccountId: src.id, destAccountId: dst.id, originalAmount: amt, fee, netAmount: amt, currency: src.currency, description: `${src.name} → ${dst.name}` });
+      persistState();
+      renderApp();
+      showToast('Transfer completed');
+    };
+
+    window.postP2PSell = () => {
+      const src = state.accounts.find(a => a.id === document.getElementById('p2p-src').value);
+      const dst = state.accounts.find(a => a.id === document.getElementById('p2p-dst').value);
+      const usdt = parseFloat(document.getElementById('p2p-usdt').value) || 0;
+      const rate = parseFloat(document.getElementById('p2p-rate').value) || 0;
+      const feeBdt = parseFloat(document.getElementById('p2p-fee').value) || 0;
+      if (!src || !dst || usdt <= 0 || rate <= 0) return showToast('Enter valid USDT amount and rate', 'error');
+
+      const grossBdt = round2(usdt * rate);
+      const netBdt = round2(grossBdt - feeBdt);
+      src.balance = round2(src.balance - usdt);
+      dst.balance = round2(dst.balance + netBdt);
+
+      // Update trading withdrawals so P2P cash-out is not miscounted as trading loss
+      if (src.type === 'TRADING') {
+        state.trading.withdrawalsUsdt = round2(state.trading.withdrawalsUsdt + usdt);
+      }
+
+      addLedgerRecord({
+        type: 'P2P_SELL', sourceAccountId: src.id, destAccountId: dst.id,
+        originalAmount: usdt, currency: 'USDT', exchangeRate: rate,
+        convertedAmount: grossBdt, fee: feeBdt, netAmount: netBdt,
+        description: `P2P Sell ${usdt} USDT @ ৳${rate} → ${dst.name} (Net ৳${netBdt})`
+      });
+      persistState();
+      renderApp();
+      showToast(`P2P Sell complete: Credited ৳${netBdt} to ${dst.name}`);
+    };
+
+    // --- 7G. HARD ASSETS & INVESTMENTS ---
+    function renderAssets() {
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Hard Assets -->
+          <div class="glass-card rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-base">Hard Assets (Bike, Phone, PC, Gadgets)</h3>
+              <button onclick="openAddAssetModal()" class="btn-accent px-3 py-1.5 rounded-xl text-xs font-semibold">+ Add Asset</button>
+            </div>
+            ${state.hardAssets.length === 0 ? '<p class="text-xs text-muted">No physical assets added yet.</p>' : state.hardAssets.map(a => `
+              <div class="p-3.5 rounded-2xl glass-input flex items-center justify-between gap-2 text-xs">
+                <div>
+                  <div class="font-bold">${a.name} <span class="text-muted">(${a.category})</span></div>
+                  <div class="text-muted">Bought: ${fmtBDT(a.purchasePrice)} • Resale: <strong>${fmtBDT(a.resaleValue)}</strong></div>
+                </div>
+                ${a.status === 'OWNED'
+                  ? `<button onclick="openSellAssetModal('${a.id}')" class="glass-input px-3 py-1.5 rounded-xl font-semibold text-amber-600">Sell</button>`
+                  : `<span class="px-2 py-1 rounded-full bg-slate-500/15 font-bold">Sold (${fmtBDT(a.soldPrice)})</span>`}
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Investments -->
+          <div class="glass-card rounded-3xl p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-base">Investments (Gold, DPS, Stocks)</h3>
+              <button onclick="openAddInvestmentModal()" class="btn-accent px-3 py-1.5 rounded-xl text-xs font-semibold">+ Add Investment</button>
+            </div>
+            ${state.investments.length === 0 ? '<p class="text-xs text-muted">No investments added yet.</p>' : state.investments.map(i => {
+              const pnl = round2(i.currentValue - i.invested);
+              return `
+                <div class="p-3.5 rounded-2xl glass-input flex items-center justify-between text-xs">
+                  <div>
+                    <div class="font-bold">${i.name} <span class="text-muted">(${i.type})</span></div>
+                    <div class="text-muted">Invested: ${fmtCurrency(i.invested, i.currency)}</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-bold">${fmtCurrency(i.currentValue, i.currency)}</div>
+                    <div class="${pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'} font-semibold">${pnl >= 0 ? '+' : ''}${pnl}</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    window.openAddAssetModal = () => {
+      openModal('Add Hard Asset', `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Asset Name</label><input id="ha-name" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="e.g., Hero Deluxe 100cc / iPhone" /></div>
+          <div><label class="text-xs font-semibold">Category</label><select id="ha-cat" class="glass-input w-full px-3 py-2 rounded-xl mt-1"><option>Bike</option><option>Mobile Phone</option><option>PC / Laptop</option><option>Gadgets</option><option>Custom</option></select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-semibold">Purchase Price (৳)</label><input id="ha-buy" type="number" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            <div><label class="text-xs font-semibold">Est. Resale Value (৳)</label><input id="ha-resale" type="number" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          </div>
+          <button onclick="saveHardAsset()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Asset</button>
+        </div>
+      `);
+    };
+
+    window.saveHardAsset = () => {
+      const name = document.getElementById('ha-name').value.trim();
+      const category = document.getElementById('ha-cat').value;
+      const purchasePrice = parseFloat(document.getElementById('ha-buy').value) || 0;
+      const resaleValue = parseFloat(document.getElementById('ha-resale').value) || 0;
+      if (!name) return showToast('Enter asset name', 'error');
+      state.hardAssets.unshift({ id: 'ha_' + Date.now(), name, category, purchasePrice, resaleValue, status: 'OWNED' });
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    window.openSellAssetModal = (id) => {
+      const a = state.hardAssets.find(x => x.id === id);
+      const bdtAccs = state.accounts.filter(x => x.currency === 'BDT').map(x => `<option value="${x.id}">${x.name}</option>`).join('');
+      openModal(`Sell Asset: ${a.name}`, `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Actual Selling Price (৳)</label><input id="sa-price" type="number" value="${a.resaleValue}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Selling Fee (৳)</label><input id="sa-fee" type="number" value="0" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Receiving Account</label><select id="sa-acc" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${bdtAccs}</select></div>
+          <button onclick="confirmSellAsset('${id}')" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Confirm Sale & Credit Account</button>
+        </div>
+      `);
+    };
+
+    window.confirmSellAsset = (id) => {
+      const a = state.hardAssets.find(x => x.id === id);
+      const price = parseFloat(document.getElementById('sa-price').value) || 0;
+      const fee = parseFloat(document.getElementById('sa-fee').value) || 0;
+      const acc = state.accounts.find(x => x.id === document.getElementById('sa-acc').value);
+      const net = round2(price - fee);
+      a.status = 'SOLD';
+      a.soldPrice = price;
+      a.soldDate = new Date().toISOString().slice(0, 10);
+      acc.balance = round2(acc.balance + net);
+      addLedgerRecord({ type: 'ASSET_SALE', destAccountId: acc.id, originalAmount: price, fee, netAmount: net, currency: 'BDT', description: `Sold asset: ${a.name}` });
+      persistState();
+      closeModal();
+      renderApp();
+      showToast(`Sold ${a.name} and credited ৳${net} to ${acc.name}`);
+    };
+
+    window.openAddInvestmentModal = () => {
+      openModal('Add Investment', `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Investment Name</label><input id="inv-name" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="e.g., Bank DPS / 22K Gold" /></div>
+          <div><label class="text-xs font-semibold">Type</label><select id="inv-type" class="glass-input w-full px-3 py-2 rounded-xl mt-1"><option>Gold</option><option>DPS</option><option>Stocks</option><option>Private</option></select></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-semibold">Invested (৳)</label><input id="inv-init" type="number" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            <div><label class="text-xs font-semibold">Current Value (৳)</label><input id="inv-curr" type="number" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          </div>
+          <button onclick="saveInvestment()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Investment</button>
+        </div>
+      `);
+    };
+
+    window.saveInvestment = () => {
+      const name = document.getElementById('inv-name').value.trim();
+      const type = document.getElementById('inv-type').value;
+      const invested = parseFloat(document.getElementById('inv-init').value) || 0;
+      const currentValue = parseFloat(document.getElementById('inv-curr').value) || 0;
+      if (!name) return showToast('Enter investment name', 'error');
+      state.investments.unshift({ id: 'inv_' + Date.now(), name, type, invested, currentValue, currency: 'BDT', status: 'ACTIVE' });
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    // --- 7H. LOANS, GOALS & RECURRING BILLS ---
+    function renderLoans() {
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Loans & Receivables -->
+          <div class="glass-card rounded-3xl p-5 space-y-3">
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-sm">Loans & Receivables</h3>
+              <button onclick="openAddLoanModal()" class="btn-accent px-3 py-1 rounded-xl text-xs font-semibold">+ Add</button>
+            </div>
+            ${state.loans.length === 0 ? '<p class="text-xs text-muted">No loans or receivables.</p>' : state.loans.map(l => `
+              <div class="p-3 rounded-2xl glass-input text-xs space-y-1.5">
+                <div class="flex justify-between">
+                  <span class="font-bold">${l.person}</span>
+                  <span class="${l.type === 'RECEIVABLE' ? 'text-sky-500' : 'text-amber-500'} font-bold">${l.type}</span>
+                </div>
+                <div class="text-muted">Remaining: <strong>${fmtBDT(l.remaining)}</strong> / ${fmtBDT(l.principal)}</div>
+                ${l.status !== 'SETTLED' ? `<button onclick="openRepayLoanModal('${l.id}')" class="w-full glass-input py-1 rounded-lg font-semibold">Record Partial / Full Payment</button>` : '<span class="text-emerald-500 font-bold">Settled</span>'}
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Saving Goals -->
+          <div class="glass-card rounded-3xl p-5 space-y-3">
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-sm">Saving Goals</h3>
+              <button onclick="openAddGoalModal()" class="btn-accent px-3 py-1 rounded-xl text-xs font-semibold">+ Add</button>
+            </div>
+            ${state.goals.length === 0 ? '<p class="text-xs text-muted">No goals set yet.</p>' : state.goals.map(g => {
+              const pct = g.target > 0 ? Math.min(100, round2((g.saved / g.target) * 100)) : 0;
+              return `
+                <div class="p-3 rounded-2xl glass-input text-xs space-y-1.5">
+                  <div class="flex justify-between font-bold"><span>${g.name}</span><span>${pct}%</span></div>
+                  <div class="w-full h-2 rounded-full bg-slate-500/15"><div class="h-full rounded-full bg-emerald-500" style="width:${pct}%"></div></div>
+                  <div class="text-muted">${fmtCurrency(g.saved, g.currency)} / ${fmtCurrency(g.target, g.currency)}</div>
+                  <button onclick="contributeGoal('${g.id}')" class="w-full glass-input py-1 rounded-lg font-semibold">+ Contribute</button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Recurring Bills -->
+          <div class="glass-card rounded-3xl p-5 space-y-3">
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-sm">Recurring Bills</h3>
+              <button onclick="openAddBillModal()" class="btn-accent px-3 py-1 rounded-xl text-xs font-semibold">+ Add</button>
+            </div>
+            ${state.recurringBills.map(b => `
+              <div class="p-3 rounded-2xl glass-input text-xs flex items-center justify-between gap-2">
+                <div>
+                  <div class="font-bold">${b.name}</div>
+                  <div class="text-muted">${fmtBDT(b.amount)} • ${b.frequency} (Day ${b.dueDay})</div>
+                </div>
+                <button onclick="openConfirmBillModal('${b.id}')" class="btn-accent px-3 py-1.5 rounded-xl font-semibold shrink-0">Pay</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    window.openAddLoanModal = () => {
+      openModal('Add Loan / Receivable', `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Type</label><select id="ln-type" class="glass-input w-full px-3 py-2 rounded-xl mt-1"><option value="RECEIVABLE">Money I Lent (Receivable)</option><option value="LIABILITY">Money I Owe (Liability)</option></select></div>
+          <div><label class="text-xs font-semibold">Person / Organization</label><input id="ln-person" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Amount (৳)</label><input id="ln-amt" type="number" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <button onclick="saveLoan()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Record</button>
+        </div>
+      `);
+    };
+
+    window.saveLoan = () => {
+      const type = document.getElementById('ln-type').value;
+      const person = document.getElementById('ln-person').value.trim();
+      const principal = parseFloat(document.getElementById('ln-amt').value) || 0;
+      if (!person || principal <= 0) return showToast('Enter person and amount', 'error');
+      state.loans.unshift({ id: 'ln_' + Date.now(), type, person, principal, remaining: principal, currency: 'BDT', status: 'OPEN' });
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    window.openRepayLoanModal = (id) => {
+      const l = state.loans.find(x => x.id === id);
+      const bdtAccs = state.accounts.filter(a => a.currency === 'BDT').map(a => `<option value="${a.id}">${a.name} (৳${a.balance})</option>`).join('');
+      openModal(`Repayment: ${l.person}`, `
+        <div class="space-y-3">
+          <p class="text-xs text-muted">Remaining balance: ৳${l.remaining}</p>
+          <div><label class="text-xs font-semibold">Repayment Amount (৳)</label><input id="rp-amt" type="number" value="${l.remaining}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">${l.type === 'RECEIVABLE' ? 'Destination Account' : 'Source Account'}</label><select id="rp-acc" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${bdtAccs}</select></div>
+          <button onclick="confirmLoanRepayment('${id}')" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Confirm Repayment</button>
+        </div>
+      `);
+    };
+
+    window.confirmLoanRepayment = (id) => {
+      const l = state.loans.find(x => x.id === id);
+      const amt = parseFloat(document.getElementById('rp-amt').value) || 0;
+      const acc = state.accounts.find(a => a.id === document.getElementById('rp-acc').value);
+      if (amt <= 0 || amt > l.remaining) return showToast('Invalid repayment amount', 'error');
+
+      l.remaining = round2(l.remaining - amt);
+      l.status = l.remaining === 0 ? 'SETTLED' : 'PARTIAL';
+      if (l.type === 'RECEIVABLE') acc.balance = round2(acc.balance + amt);
+      else acc.balance = round2(acc.balance - amt);
+
+      addLedgerRecord({ type: l.type === 'RECEIVABLE' ? 'LOAN_REPAYMENT' : 'DEBT_PAYMENT', originalAmount: amt, netAmount: amt, fee: 0, currency: 'BDT', description: `Repayment with ${l.person}` });
+      persistState();
+      closeModal();
+      renderApp();
+      showToast('Repayment recorded');
+    };
+
+    window.openAddGoalModal = () => {
+      openModal('New Saving Goal', `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Goal Name</label><input id="gl-name" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="e.g., Used Pulsar 150 / New Phone" /></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-semibold">Target Amount</label><input id="gl-target" type="number" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            <div><label class="text-xs font-semibold">Currency</label><select id="gl-curr" class="glass-input w-full px-3 py-2 rounded-xl mt-1"><option value="BDT">BDT</option><option value="USDT">USDT</option></select></div>
+          </div>
+          <button onclick="saveGoal()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Create Goal</button>
+        </div>
+      `);
+    };
+
+    window.saveGoal = () => {
+      const name = document.getElementById('gl-name').value.trim();
+      const target = parseFloat(document.getElementById('gl-target').value) || 0;
+      const currency = document.getElementById('gl-curr').value;
+      if (!name || target <= 0) return showToast('Enter goal name and target', 'error');
+      state.goals.unshift({ id: 'gl_' + Date.now(), name, target, saved: 0, currency });
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    window.contributeGoal = (id) => {
+      const g = state.goals.find(x => x.id === id);
+      openModal(`Contribute to ${g.name}`, `
+        <div><label class="text-xs font-semibold">Amount (${g.currency})</label><input id="gc-amt" type="number" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+        <button onclick="saveGoalContrib('${id}')" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Add Contribution</button>
+      `);
+    };
+
+    window.saveGoalContrib = (id) => {
+      const g = state.goals.find(x => x.id === id);
+      const amt = parseFloat(document.getElementById('gc-amt').value) || 0;
+      if (amt <= 0) return showToast('Enter valid amount', 'error');
+      g.saved = round2(g.saved + amt);
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    window.openAddBillModal = () => {
+      openModal('Add Recurring Bill', `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Bill Name</label><input id="bl-name" class="glass-input w-full px-3 py-2 rounded-xl mt-1" placeholder="e.g., Cooking Gas / Rent" /></div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="text-xs font-semibold">Amount (৳)</label><input id="bl-amt" type="number" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+            <div><label class="text-xs font-semibold">Due Day (1-31)</label><input id="bl-day" type="number" value="5" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          </div>
+          <button onclick="saveBill()" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Save Bill</button>
+        </div>
+      `);
+    };
+
+    window.saveBill = () => {
+      const name = document.getElementById('bl-name').value.trim();
+      const amount = parseFloat(document.getElementById('bl-amt').value) || 0;
+      const dueDay = parseInt(document.getElementById('bl-day').value) || 1;
+      if (!name) return showToast('Enter bill name', 'error');
+      state.recurringBills.push({ id: 'bill_' + Date.now(), name, amount, frequency: 'Monthly', dueDay, lastPaid: null });
+      persistState();
+      closeModal();
+      renderApp();
+    };
+
+    window.openConfirmBillModal = (id) => {
+      const b = state.recurringBills.find(x => x.id === id);
+      const bdtAccs = state.accounts.filter(a => a.currency === 'BDT').map(a => `<option value="${a.id}">${a.name} (৳${a.balance})</option>`).join('');
+      openModal(`Confirm Bill Payment: ${b.name}`, `
+        <div class="space-y-3">
+          <div><label class="text-xs font-semibold">Amount (৳)</label><input id="cb-amt" type="number" value="${b.amount}" class="glass-input w-full px-3 py-2 rounded-xl mt-1" /></div>
+          <div><label class="text-xs font-semibold">Pay From Account</label><select id="cb-acc" class="glass-input w-full px-3 py-2 rounded-xl mt-1">${bdtAccs}</select></div>
+          <button onclick="confirmBillPayment('${id}')" class="btn-accent w-full py-2.5 rounded-xl font-semibold">Confirm & Deduct</button>
+        </div>
+      `);
+    };
+
+    window.confirmBillPayment = (id) => {
+      const b = state.recurringBills.find(x => x.id === id);
+      const amt = parseFloat(document.getElementById('cb-amt').value) || 0;
+      const acc = state.accounts.find(a => a.id === document.getElementById('cb-acc').value);
+      if (amt <= 0) return showToast('Enter valid amount', 'error');
+      acc.balance = round2(acc.balance - amt);
+      b.lastPaid = new Date().toISOString().slice(0, 10);
+      addLedgerRecord({ type: 'EXPENSE', sourceAccountId: acc.id, originalAmount: amt, fee: 0, netAmount: amt, currency: 'BDT', category: 'Bills & Recharge', description: `Recurring Bill: ${b.name}` });
+      persistState();
+      closeModal();
+      renderApp();
+      showToast(`Paid ${b.name} (৳${amt})`);
+    };
+
+    // --- 7I. ANALYTICS & EXPORT ---
+    function renderAnalytics() {
+      return `
+        <div class="flex flex-wrap items-center justify-between gap-3 no-print">
+          <p class="text-sm text-muted">Visual wealth breakdown & exportable financial reports.</p>
+          <div class="flex gap-2">
+            <button onclick="exportLedgerCSV()" class="glass-input px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5"><i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-500"></i> Export CSV/Excel</button>
+            <button onclick="window.print()" class="btn-accent px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5"><i data-lucide="printer" class="w-4 h-4"></i> Print / PDF</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="glass-card rounded-3xl p-6">
+            <h4 class="font-bold text-sm mb-4">Asset Allocation (BDT)</h4>
+            <div class="h-64"><canvas id="chart-allocation"></canvas></div>
+          </div>
+          <div class="glass-card rounded-3xl p-6">
+            <h4 class="font-bold text-sm mb-4">Expense Breakdown by Category</h4>
+            <div class="h-64"><canvas id="chart-expenses"></canvas></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function initAnalyticsCharts() {
+      const m = computeMetrics();
+      const ctxAlloc = document.getElementById('chart-allocation');
+      if (ctxAlloc) {
+        chartInstances.alloc = new Chart(ctxAlloc, {
+          type: 'doughnut',
+          data: {
+            labels: ['Solid Cash', 'Trading Capital', 'Hard Assets', 'Investments', 'Receivables'],
+            datasets: [{
+              data: [m.solidCashBdt, m.tradingCapitalBdt, m.ownedHardAssetsBdt, m.activeInvestmentsBdt, m.receivablesBdt],
+              backgroundColor: ['#10b981', '#0ea5e9', '#f59e0b', '#8b5cf6', '#ec4899'],
+              borderWidth: 0
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+
+      const expMap = {};
+      state.ledger.filter(l => l.type === 'EXPENSE').forEach(e => {
+        const cat = e.category || 'Others';
+        expMap[cat] = (expMap[cat] || 0) + Number(e.originalAmount);
+      });
+      const ctxExp = document.getElementById('chart-expenses');
+      if (ctxExp) {
+        chartInstances.exp = new Chart(ctxExp, {
+          type: 'bar',
+          data: {
+            labels: Object.keys(expMap).length ? Object.keys(expMap) : ['No Expenses'],
+            datasets: [{
+              label: 'Amount',
+              data: Object.values(expMap).length ? Object.values(expMap) : [0],
+              backgroundColor: '#f43f5e',
+              borderRadius: 8
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+    }
+
+    window.exportLedgerCSV = () => {
+      const headers = ['ID', 'Date', 'Type', 'Category', 'Amount', 'Fee', 'Net', 'Currency', 'Description'];
+      const rows = state.ledger.map(l => [l.id, l.date, l.type, l.category || '', l.originalAmount, l.fee, l.netAmount, l.currency, `"${(l.description || '').replace(/"/g, '""')}"`]);
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NetWorth_RQ_Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      showToast('Ledger exported to CSV');
+    };
+
+    // --- 7J. DAILY FINANCIAL CHECK-IN ---
+    function renderCheckin() {
+      const m = computeMetrics();
+      return `
+        <div class="glass-card rounded-3xl p-6 space-y-4">
+          <div>
+            <h3 class="font-bold text-base">Nightly Financial Check-in</h3>
+            <p class="text-xs text-muted">Review your current balances and lock in a timestamped daily wealth snapshot.</p>
+          </div>
+          <div class="grid grid-cols-3 gap-3 text-xs">
+            <div class="p-3 rounded-2xl glass-input"><span class="text-muted block">Solid Cash</span><strong class="text-sm">${fmtBDT(m.solidCashBdt)}</strong></div>
+            <div class="p-3 rounded-2xl glass-input"><span class="text-muted block">Trading Capital</span><strong class="text-sm">${fmtUSD(m.currentTradingUsdt)}</strong></div>
+            <div class="p-3 rounded-2xl glass-input"><span class="text-muted block">Net Worth</span><strong class="text-sm">${fmtBDT(m.totalNetWorthBdt)}</strong></div>
+          </div>
+          <textarea id="checkin-note" rows="3" class="glass-input w-full p-3 rounded-2xl text-sm" placeholder="Today's financial summary, trading discipline notes, or pending reminders..."></textarea>
+          <button onclick="saveDailyCheckin()" class="btn-accent px-6 py-2.5 rounded-xl text-sm font-semibold">Save Today's Check-in Snapshot</button>
+        </div>
+
+        <div class="glass-card rounded-3xl p-6 space-y-3">
+          <h4 class="font-bold text-sm">Historical Check-ins</h4>
+          ${state.dailyCheckins.length === 0 ? '<p class="text-xs text-muted">No daily check-ins saved yet.</p>' : state.dailyCheckins.map(c => `
+            <div class="p-3.5 rounded-2xl glass-input text-xs space-y-1">
+              <div class="flex justify-between font-bold"><span>${c.date}</span><span>Net Worth: ${fmtBDT(c.totalNetWorthBdt)}</span></div>
+              <div class="text-muted">Solid Cash: ${fmtBDT(c.solidCashBdt)} • Trading: ${fmtUSD(c.tradingUsdt)}</div>
+              ${c.notes ? `<div class="pt-1">${c.notes}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    window.saveDailyCheckin = () => {
+      const m = computeMetrics();
+      const notes = document.getElementById('checkin-note').value.trim();
+      state.dailyCheckins.unshift({
+        id: 'chk_' + Date.now(),
+        date: new Date().toLocaleString(),
+        totalNetWorthBdt: m.totalNetWorthBdt,
+        solidCashBdt: m.solidCashBdt,
+        tradingUsdt: m.currentTradingUsdt,
+        notes
+      });
+      persistState();
+      renderApp();
+      showToast('Daily check-in snapshot saved');
+    };
+
+    // --- 7K. AI FINANCIAL AGENT (Gemini API) ---
+    function renderAI() {
+      return `
+        <div class="glass-card rounded-3xl p-5 flex flex-col h-[72vh]">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200/30">
+            <div>
+              <h3 class="font-bold text-base flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i> NetWorth RQ AI Financial Agent</h3>
+              <p class="text-xs text-muted">Connected directly to your real financial records. Strict, friendly & direct.</p>
+            </div>
+            <select id="ai-lang" onchange="setAiLang(this.value)" class="glass-input px-3 py-1.5 rounded-xl text-xs font-semibold">
+              <option value="banglish" ${state.settings.aiLanguage === 'banglish' ? 'selected' : ''}>Banglish</option>
+              <option value="bangla" ${state.settings.aiLanguage === 'bangla' ? 'selected' : ''}>বাংলা</option>
+              <option value="english" ${state.settings.aiLanguage === 'english' ? 'selected' : ''}>English</option>
+            </select>
+          </div>
+
+          <!-- Chat History -->
+          <div id="ai-messages" class="flex-1 overflow-y-auto py-4 space-y-3 text-sm">
+            ${state.aiChat.length === 0 ? `
+              <div class="p-4 rounded-2xl glass-input text-xs text-muted">
+                Ask me anything about your real balances, trading PnL, monthly spending, or safe trading allocation. I never invent numbers.
+              </div>
+            ` : state.aiChat.map(msg => `
+              <div class="flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-[85%] p-3.5 rounded-2xl ${msg.role === 'user' ? 'btn-accent' : 'glass-input'} whitespace-pre-wrap text-xs sm:text-sm">${msg.text}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Quick Prompts -->
+          <div class="flex gap-2 overflow-x-auto pb-2 text-[11px]">
+            <button onclick="askAI('What is my total net worth and solid cash right now?')" class="glass-input px-3 py-1.5 rounded-full shrink-0">My Net Worth?</button>
+            <button onclick="askAI('Analyze my trading PnL and tell me if I am disciplined.')" class="glass-input px-3 py-1.5 rounded-full shrink-0">Trading PnL Audit</button>
+            <button onclick="askAI('Am I spending more than I earn this month?')" class="glass-input px-3 py-1.5 rounded-full shrink-0">Spending Check</button>
+          </div>
+
+          <!-- Input Box -->
+          <div class="flex gap-2 pt-2 border-t border-slate-200/30">
+            <input id="ai-input" onkeydown="if(event.key==='Enter') sendAIMessage()" class="glass-input flex-1 px-4 py-2.5 rounded-2xl text-sm" placeholder="Ask your financial advisor..." />
+            <button onclick="sendAIMessage()" id="ai-send-btn" class="btn-accent px-5 py-2.5 rounded-2xl text-sm font-semibold">Send</button>
+          </div>
+        </div>
+      `;
+    }
+
+    window.setAiLang = (lang) => { state.settings.aiLanguage = lang; persistState(); };
+    window.askAI = (q) => { document.getElementById('ai-input').value = q; sendAIMessage(); };
+
+    window.sendAIMessage = async () => {
+      const input = document.getElementById('ai-input');
+      const query = input.value.trim();
+      if (!query) return;
+      input.value = '';
+
+      state.aiChat.push({ role: 'user', text: query, time: new Date().toLocaleTimeString() });
+      renderApp();
+      const msgBox = document.getElementById('ai-messages');
+      msgBox.scrollTop = msgBox.scrollHeight;
+
+      const m = computeMetrics();
+      const financialContext = JSON.stringify({
+        metrics: m,
+        accounts: state.accounts.map(a => ({ name: a.name, type: a.type, currency: a.currency, balance: a.balance })),
+        loans: state.loans,
+        hardAssetsOwned: state.hardAssets.filter(a => a.status === 'OWNED'),
+        recentLedger: state.ledger.slice(0, 15)
+      });
+
+      const systemPrompt = `You are NetWorth RQ's strict, friendly, and direct personal financial advisor.
+Respond in ${state.settings.aiLanguage.toUpperCase()}.
+CRITICAL RULE: Base every number strictly on the provided JSON financial state. Never invent or hallucinate financial data. If a value is 0, say it is 0.
+USER FINANCIAL STATE: ${financialContext}`;
+
+      const apiKey = state.settings.customGeminiKey || "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      let reply = 'Unable to reach AI service. If running offline outside Canvas, add your Gemini API Key in Settings.';
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: query }] }],
+              systemInstruction: { parts: [{ text: systemPrompt }] }
+            })
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) { reply = text; break; }
+        } catch (err) {
+          await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        }
+      }
+
+      state.aiChat.push({ role: 'assistant', text: reply, time: new Date().toLocaleTimeString() });
+      persistState();
+      renderApp();
+      const box2 = document.getElementById('ai-messages');
+      if (box2) box2.scrollTop = box2.scrollHeight;
+    };
+
+    // --- 7L. SETTINGS, SECURITY & BACKUP ---
+    function renderSettings() {
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Themes -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <h3 class="font-bold text-base">Visual Theme (Glassmorphism)</h3>
+            <div class="grid grid-cols-3 gap-2.5 text-xs">
+              <button onclick="setTheme('pure_white')" class="p-3 rounded-2xl border ${state.settings.theme === 'pure_white' ? 'border-slate-900 font-bold' : 'border-slate-200'} bg-white text-slate-900">Pure White</button>
+              <button onclick="setTheme('warm_neon')" class="p-3 rounded-2xl border ${state.settings.theme === 'warm_neon' ? 'border-orange-500 font-bold' : 'border-amber-200'} bg-amber-50 text-orange-600">Warm Neon</button>
+              <button onclick="setTheme('dark_glass')" class="p-3 rounded-2xl border ${state.settings.theme === 'dark_glass' ? 'border-sky-400 font-bold' : 'border-slate-700'} bg-slate-900 text-sky-400">Dark Glass</button>
+            </div>
+          </div>
+
+          <!-- PIN Lock & Privacy -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <h3 class="font-bold text-base">Security & PIN Lock</h3>
+            <div class="flex gap-2">
+              <input id="set-pin-input" type="password" maxlength="6" value="${state.settings.pin}" placeholder="Set 4-6 digit PIN" class="glass-input flex-1 px-3 py-2 rounded-xl text-sm" />
+              <button onclick="savePinSetting()" class="btn-accent px-4 py-2 rounded-xl text-xs font-semibold">Save PIN</button>
+            </div>
+            <p class="text-xs text-muted">Leave empty and click Save to disable PIN lock.</p>
+          </div>
+
+          <!-- JSON Backup & Restore -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <h3 class="font-bold text-base">JSON Backup & Restore</h3>
+            <p class="text-xs text-muted">Download a complete snapshot of your NetWorth RQ vault or restore from a backup file.</p>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="exportJSONBackup()" class="btn-accent px-4 py-2 rounded-xl text-xs font-semibold">Download JSON Backup</button>
+              <label class="glass-input px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer">
+                Restore JSON File
+                <input type="file" accept=".json" onchange="importJSONBackup(event)" class="hidden" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Optional Gemini API Key for Offline Use -->
+          <div class="glass-card rounded-3xl p-6 space-y-3">
+            <h3 class="font-bold text-base">AI Agent API Key (Optional)</h3>
+            <p class="text-xs text-muted">Only needed if you download this HTML file and run it locally outside Canvas.</p>
+            <div class="flex gap-2">
+              <input id="custom-gemini-key" type="password" value="${state.settings.customGeminiKey || ''}" placeholder="AIza..." class="glass-input flex-1 px-3 py-2 rounded-xl text-sm" />
+              <button onclick="saveCustomGeminiKey()" class="btn-accent px-4 py-2 rounded-xl text-xs font-semibold">Save</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    window.setTheme = (t) => { applyTheme(t); renderApp(); };
+
+    window.savePinSetting = () => {
+      const pin = document.getElementById('set-pin-input').value.trim();
+      state.settings.pin = pin;
+      document.getElementById('header-lock-btn').classList.toggle('hidden', !pin);
+      persistState();
+      showToast(pin ? 'PIN lock enabled' : 'PIN lock disabled');
+    };
+
+    window.saveCustomGeminiKey = () => {
+      state.settings.customGeminiKey = document.getElementById('custom-gemini-key').value.trim();
+      persistState();
+      showToast('API key saved');
+    };
+
+    window.exportJSONBackup = () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NetWorth_RQ_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      showToast('Backup downloaded');
+    };
+
+    window.importJSONBackup = (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed.accounts || !parsed.settings) throw new Error('Invalid backup file');
+          state = { ...createInitialState(), ...parsed };
+          applyTheme(state.settings.theme);
+          persistState();
+          renderApp();
+          showToast('Vault restored successfully');
+        } catch (err) {
+          showToast('Invalid JSON backup file', 'error');
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    // =========================================================================
+    // 8. BOOTSTRAP APPLICATION
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      renderApp();
+      initCloudPersistence();
+    });
+  </script>
+</body>
+</html>
